@@ -339,11 +339,11 @@ function drawCharts(){
 }
 
 /* ===== Data Pelanggan (input sekali) ===== */
-function vPlg(){return bar(`<input oninput="PG=1;F.q=this.value;tPlg()" value="${esc(F.q)}" placeholder="Cari nama / ID..." class="${IN} sm:w-64 flex-1 sm:flex-none">`,cabSel(),`<button onclick="fPlg()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Pelanggan</button>`)+`<div id="tbl" class="card overflow-hidden"></div>`}
+function vPlg(){return bar(`<input oninput="PG=1;F.q=this.value;tPlg()" value="${esc(F.q)}" placeholder="Cari nama / alamat / ID..." class="${IN} sm:w-64 flex-1 sm:flex-none">`,cabSel(),`<button onclick="fPlg()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Pelanggan</button>`)+`<div id="tbl" class="card overflow-hidden"></div>`}
 function tPlg(){
-  const q=F.q.toLowerCase(),r=visP().filter(p=>(p.nama+p.id).toLowerCase().includes(q));
-  $('tbl').innerHTML=table(['ID','Pelanggan','Cabang','Paket / Tarif','Diinput Oleh','Status',''],r.map(p=>[
-    `<span class="font-mono font-bold text-blue-700">${p.id}</span>`,`<div><b>${esc(p.nama)}</b><div class="text-slate-500">${esc(p.alamat)}</div>${p.keterangan?`<div class="text-[10px] italic text-slate-400">${esc(p.keterangan)}</div>`:''}</div>`,esc(cabNama(p.cabangId)),`<div>${esc(p.paket)}<div class="font-bold">${rp(p.tarif)}</div></div>`,
+  const q=F.q.toLowerCase(),r=visP().filter(p=>(p.nama+p.alamat+p.id).toLowerCase().includes(q));
+  $('tbl').innerHTML=table(['ID','Pelanggan & Alamat','Cabang','Paket / Tarif','Diinput Oleh','Status',''],r.map(p=>[
+    `<span class="font-mono font-bold text-blue-700">${p.id}</span>`,`<div><b>${esc(p.nama)}</b><div class="text-slate-500 text-[11px]"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i>${esc(p.alamat)}</div>${p.keterangan?`<div class="text-[10px] italic text-slate-400">${esc(p.keterangan)}</div>`:''}</div>`,esc(cabNama(p.cabangId)),`<div>${esc(p.paket)}<div class="font-bold">${rp(p.tarif)}</div></div>`,
     `<div>${esc(p.diinputOleh?.nama)}<div class="text-[10px] text-slate-400">${esc(p.diinputOleh?.role)}</div></div>`,
     p.aktif!==false?pill('Aktif','g'):pill('Nonaktif','s'),
     `<div class="whitespace-nowrap flex gap-1.5 flex-wrap justify-end"><button onclick="fPlg('${p.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="tglPlg('${p.id}')" class="act-btn ab-o">${p.aktif!==false?'Nonaktifkan':'Aktifkan'}</button>${isA()?`<button onclick="delPlg('${p.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button>`:''}</div>`]));
@@ -352,17 +352,18 @@ function fPlg(id){
   const p=S.pelanggan.find(x=>x.id===id)||{};
   modal(id?'Edit Pelanggan':'Tambah Pelanggan',`<form onsubmit="sPlg(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">
   ${fld('ID Pelanggan',`<input id="f-id" readonly class="${IN} bg-slate-100 font-mono" value="${p.id||'PLG-'+uid6()}">`)}
-  ${fld('Nama',`<input id="f-nama" required class="${IN}" value="${esc(p.nama)}">`)}
-  ${fld('Alamat',`<input id="f-alamat" required class="${IN}" value="${esc(p.alamat)}">`)}
-  ${fld('Cabang',isA()?`<select id="f-cab" required class="${IN}"><option value="">- Pilih -</option>${S.cabang.map(c=>`<option value="${c.id}" ${p.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`:`<input readonly class="${IN} bg-slate-100" value="${esc(cabNama(me.cabangId))}">`)}
-  <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="f-paket" required class="${IN}" value="${esc(p.paket)}">`)}${fld('Tarif Bulanan',`<input id="f-tarif" type="number" inputmode="numeric" min="0" required class="${IN}" value="${p.tarif??''}">`)}</div>
+  ${fld('Nama Pelanggan',`<input id="f-nama" required placeholder="Nama Lengkap" class="${IN}" value="${esc(p.nama)}">`)}
+  ${fld('Alamat Lengkap',`<textarea id="f-alamat" required placeholder="Jl. Contoh No. 12, RT 01/02" rows="2" class="${IN}">${esc(p.alamat)}</textarea>`)}
+  ${fld('Cabang',isA()?`<select id="f-cab" required class="${IN}"><option value="">- Pilih Cabang -</option>${S.cabang.map(c=>`<option value="${c.id}" ${p.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`:`<input readonly class="${IN} bg-slate-100" value="${esc(cabNama(me.cabangId))}">`)}
+  <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="f-paket" required placeholder="Home 20 Mbps" class="${IN}" value="${esc(p.paket)}">`)}${fld('Tarif Bulanan (Rp)',`<input id="f-tarif" type="number" inputmode="numeric" min="0" required class="${IN}" value="${p.tarif??''}">`)}</div>
   ${fld('Status',`<select id="f-aktif" class="${IN}"><option value="1">Aktif</option><option value="0" ${p.aktif===false?'selected':''}>Nonaktif</option></select>`)}
   ${fld('Keterangan',`<textarea id="f-ket" rows="2" placeholder="Contoh: Pelanggan lama, bayar tiap tanggal 5" class="${IN}">${esc(p.keterangan)}</textarea>`)}
-  <button class="${BT} w-full py-3">Simpan</button></form>`);
+  <button class="${BT} w-full py-3">Simpan Data Pelanggan</button></form>`);
 }
 async function sPlg(e){
   e.preventDefault();const old=S.pelanggan.find(x=>x.id===$('f-old').value);
   const o={id:$('f-id').value,nama:$('f-nama').value.trim(),alamat:$('f-alamat').value.trim(),paket:$('f-paket').value.trim(),tarif:Number($('f-tarif').value)||0,cabangId:isA()?$('f-cab').value:me.cabangId,aktif:$('f-aktif').value==='1',keterangan:$('f-ket').value.trim(),diinputOleh:old?old.diinputOleh:who(),createdAt:old?old.createdAt:new Date().toISOString()};
+  if(!o.alamat)return toast('Alamat wajib diisi','e');
   if(await safe(()=>DB.put('pelanggan',o))){closeModal();toast('Pelanggan tersimpan');render()}
 }
 async function tglPlg(id){const p=S.pelanggan.find(x=>x.id===id);if(await safe(()=>DB.put('pelanggan',{...p,aktif:p.aktif===false})))tPlg()}
@@ -372,33 +373,34 @@ async function delPlg(id){
 }
 
 /* ===== Input Pembayaran (tinggal isi nominal) ===== */
-function vByr(){return bar(`<select onchange="PG=1;F.bln=this.value;tByr()" class="${IN} sm:w-52">${monthOpts(F.bln)}</select>`,`<input oninput="PG=1;F.q=this.value;tByr()" value="${esc(F.q)}" placeholder="Cari nama / ID..." class="${IN} sm:w-56 flex-1 sm:flex-none">`,cabSel(),`<button onclick="fBayar()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Tambah Pembayaran</button>`)+`<div id="sum" class="flex gap-2 mb-3 text-xs font-bold"></div><div id="tbl" class="card overflow-hidden"></div>`}
+function vByr(){return bar(`<select onchange="PG=1;F.bln=this.value;tByr()" class="${IN} sm:w-52">${monthOpts(F.bln)}</select>`,`<input oninput="PG=1;F.q=this.value;tByr()" value="${esc(F.q)}" placeholder="Cari nama / alamat / ID..." class="${IN} sm:w-56 flex-1 sm:flex-none">`,cabSel(),`<button onclick="fBayar()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Tambah Pembayaran</button>`)+`<div id="sum" class="flex gap-2 mb-3 text-xs font-bold"></div><div id="tbl" class="card overflow-hidden"></div>`}
 function tByr(){
   const q=F.q.toLowerCase(),T=Object.fromEntries(S.tagihan.filter(t=>t.bulan===F.bln).map(t=>[t.pelangganId,t]));
-  const P=visP().filter(p=>p.aktif!==false&&(p.nama+p.id).toLowerCase().includes(q));
+  const P=visP().filter(p=>p.aktif!==false&&(p.nama+p.alamat+p.id).toLowerCase().includes(q));
   const lunas=P.filter(p=>T[p.id]).length;
   $('sum').innerHTML=`<span class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600">${bl(F.bln)}</span><span class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>${lunas} lunas</span><span class="px-3 py-1.5 rounded-xl bg-orange-50 text-orange-700"><i class="fa-solid fa-clock mr-1"></i>${P.length-lunas} belum</span>`;
-  $('tbl').innerHTML=table(['Pelanggan','Cabang','Tarif','Nominal Bayar','Status','Diinput / Dicatat Oleh',''],P.map(p=>{const t=T[p.id];return[
-    `<div><b>${esc(p.nama)}</b><div class="font-mono text-[10px] text-slate-500">${p.id}</div></div>`,esc(cabNama(p.cabangId)),rp(p.tarif),
+  $('tbl').innerHTML=table(['Pelanggan & Alamat','Cabang','Tarif','Nominal Bayar','Status','Diinput / Dicatat Oleh',''],P.map(p=>{const t=T[p.id];return[
+    `<div><b>${esc(p.nama)}</b><div class="text-slate-500 text-[11px]"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i>${esc(p.alamat)}</div><div class="font-mono text-[10px] text-slate-400">${p.id}</div></div>`,esc(cabNama(p.cabangId)),rp(p.tarif),
     t?`<b>${rp(t.nominalBayar)}</b>`:`<input id="n-${p.id}" type="number" inputmode="numeric" min="1" value="${p.tarif}" class="w-28 py-1.5 px-2 border border-slate-200 rounded-lg text-right">`,
     t?pill('<i class="fa-solid fa-check"></i> Lunas','g'):pill('Belum Bayar','o'),
     `<div>${esc(p.diinputOleh?.nama)}<div class="text-[10px] text-slate-400">${t?'Dicatat: '+esc(t.dibayarOleh?.nama):'-'}</div>${t&&t.catatan?`<div class="text-[10px] italic text-slate-500">Ket: ${esc(t.catatan)}</div>`:''}</div>`,
     t?`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="kw('${t.id}')" class="act-btn ab-b"><i class="fa-solid fa-receipt"></i>Kwitansi</button><button onclick="batal('${t.id}')" class="act-btn ab-r">Batalkan</button></div>`:`<button onclick="bayar('${p.id}')" class="${BT}"><i class="fa-solid fa-check mr-1.5"></i>Bayar</button>`]}));
 }
-const mkTg=(p,bln,n,ket)=>({id:p.id+'_'+bln,pelangganId:p.id,nama:p.nama,alamat:p.alamat,cabangId:p.cabangId,bulan:bln,nominalBayar:n,status:'Lunas',tglBayar:new Date().toISOString(),diinputOleh:p.diinputOleh,dibayarOleh:who(),catatan:ket||''});
+const mkTg=(p,bln,n,ket)=>({id:p.id+'_'+bln,pelangganId:p.id,nama:p.nama,alamat:p.alamat||'-',cabangId:p.cabangId,bulan:bln,nominalBayar:n,status:'Lunas',tglBayar:new Date().toISOString(),diinputOleh:p.diinputOleh,dibayarOleh:who(),catatan:ket||''});
 function fBayar(){
   const P=visP().filter(p=>p.aktif!==false),rd=(v,l,c)=>`<label class="flex items-center gap-2 p-3 border border-slate-200 rounded-xl cursor-pointer text-xs font-bold has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50"><input type="radio" name="md" value="${v}" ${c?'checked':''} onchange="mdB()">${l}</label>`;
   modal('Tambah Pembayaran',`<form onsubmit="sBayar(event)" class="space-y-3">
   <div class="grid grid-cols-2 gap-2">${rd('lama','Pelanggan Lama',1)}${rd('baru','Pelanggan Baru',0)}</div>
   ${fld('Bulan Tagihan',`<select id="b-bln" class="${IN}">${monthOpts(F.bln)}</select>`)}
-  <div id="b-lama">${fld('Pilih Pelanggan',`<select id="b-plg" onchange="pilPlg()" class="${IN}"><option value="">- Pilih pelanggan -</option>${P.map(p=>`<option value="${p.id}" data-t="${p.tarif}">${esc(p.nama)} (${p.id}) - ${esc(cabNama(p.cabangId))}</option>`).join('')}</select>`)}</div>
+  <div id="b-lama">${fld('Pilih Pelanggan',`<select id="b-plg" onchange="pilPlg()" class="${IN}"><option value="">- Pilih pelanggan -</option>${P.map(p=>`<option value="${p.id}" data-t="${p.tarif}" data-a="${esc(p.alamat)}">${esc(p.nama)} (${p.id}) - ${esc(p.alamat)}</option>`).join('')}</select>`)}</div>
   <div id="b-baru" class="hidden space-y-3">
-    ${fld('Nama Pelanggan',`<input id="b-nama" class="${IN}">`)}${fld('Alamat',`<input id="b-alamat" class="${IN}">`)}
-    ${fld('Cabang',isA()?`<select id="b-cab" class="${IN}"><option value="">- Pilih -</option>${S.cabang.map(c=>`<option value="${c.id}">${esc(c.nama)}</option>`).join('')}</select>`:`<input readonly class="${IN} bg-slate-100" value="${esc(cabNama(me.cabangId))}">`)}
-    <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="b-paket" class="${IN}">`)}${fld('Tarif Bulanan',`<input id="b-tarif" type="number" inputmode="numeric" min="0" oninput="$('b-nom').value=this.value" class="${IN}">`)}</div>
+    ${fld('Nama Pelanggan',`<input id="b-nama" placeholder="Nama Lengkap" class="${IN}">`)}
+    ${fld('Alamat Lengkap',`<textarea id="b-alamat" placeholder="Jl. Contoh No. 12" rows="2" class="${IN}"></textarea>`)}
+    ${fld('Cabang',isA()?`<select id="b-cab" class="${IN}"><option value="">- Pilih Cabang -</option>${S.cabang.map(c=>`<option value="${c.id}">${esc(c.nama)}</option>`).join('')}</select>`:`<input readonly class="${IN} bg-slate-100" value="${esc(cabNama(me.cabangId))}">`)}
+    <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="b-paket" placeholder="Home 20 Mbps" class="${IN}">`)}${fld('Tarif Bulanan',`<input id="b-tarif" type="number" inputmode="numeric" min="0" oninput="$('b-nom').value=this.value" class="${IN}">`)}</div>
     ${fld('Keterangan Pelanggan',`<input id="b-pket" placeholder="Opsional" class="${IN}">`)}
   </div>
-  ${fld('Nominal Bayar',`<input id="b-nom" type="number" inputmode="numeric" min="1" required class="${IN}">`)}
+  ${fld('Nominal Bayar (Rp)',`<input id="b-nom" type="number" inputmode="numeric" min="1" required class="${IN}">`)}
   ${fld('Keterangan Pembayaran',`<textarea id="b-ket" rows="2" placeholder="Contoh: Dibayar tunai / transfer, titip tetangga" class="${IN}"></textarea>`)}
   <button class="${BT} w-full py-3">Simpan Pembayaran</button></form>`);
 }
@@ -428,18 +430,18 @@ async function bayar(pid){
 }
 async function batal(id){if(confirm('Batalkan pembayaran ini?')&&await safe(()=>DB.del('tagihan',id))){toast('Pembayaran dibatalkan');tByr()}}
 function rcHTML(t){
-  const r=(a,b)=>`<tr><td style="padding:3px 0;color:#64748b">${a}</td><td style="text-align:right;font-weight:600">${b}</td></tr>`;
-  return `<div style="font-family:sans-serif;max-width:420px;margin:auto;border:2px solid #1e293b;padding:16px;border-radius:12px;background:#fff"><h2 style="text-align:center;margin:0">${esc(brand())}</h2><p style="text-align:center;font-size:12px;margin:2px 0 8px">KWITANSI PEMBAYARAN INTERNET</p><hr><table style="width:100%;font-size:13px">${r('ID Pelanggan',t.pelangganId)}${r('Nama',esc(t.nama))}${r('Alamat',esc(t.alamat))}${r('Cabang',esc(cabNama(t.cabangId)))}${r('Periode',bl(t.bulan))}${r('Tgl Bayar',new Date(t.tglBayar).toLocaleDateString('id-ID'))}${r('Diinput Oleh',esc(t.diinputOleh?.nama))}${r('Dicatat Oleh',esc(t.dibayarOleh?.nama))}${t.catatan?r('Keterangan',esc(t.catatan)):''}</table><hr><div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800"><span>TOTAL</span><span>${rp(t.nominalBayar)}</span></div><p style="text-align:center;font-size:12px;margin-top:10px">LUNAS - Terima kasih</p></div>`;
+  const r=(a,b)=>`<tr><td style="padding:4px 0;color:#64748b">${a}</td><td style="text-align:right;font-weight:600">${b}</td></tr>`;
+  return `<div style="font-family:sans-serif;max-width:420px;margin:auto;border:2px solid #1e293b;padding:16px;border-radius:12px;background:#fff"><h2 style="text-align:center;margin:0;color:#1e293b">${esc(brand())}</h2><p style="text-align:center;font-size:12px;margin:2px 0 8px;font-weight:700">KWITANSI PEMBAYARAN INTERNET</p><hr style="border:none;border-top:1px dashed #cbd5e1;margin:8px 0"><table style="width:100%;font-size:13px">${r('ID Pelanggan',t.pelangganId)}${r('Nama Pelanggan',esc(t.nama))}${r('Alamat',esc(t.alamat||'-'))}${r('Cabang',esc(cabNama(t.cabangId)))}${r('Periode',bl(t.bulan))}${r('Tgl Bayar',new Date(t.tglBayar).toLocaleDateString('id-ID'))}${r('Diinput Oleh',esc(t.diinputOleh?.nama))}${r('Dicatat Oleh',esc(t.dibayarOleh?.nama))}${t.catatan?r('Keterangan',esc(t.catatan)):''}</table><hr style="border:none;border-top:1px dashed #cbd5e1;margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:#0f172a"><span>TOTAL BAYAR</span><span>${rp(t.nominalBayar)}</span></div><p style="text-align:center;font-size:12px;margin-top:12px;color:#059669;font-weight:800">LUNAS - Terima kasih</p></div>`;
 }
-function kw(id){const t=S.tagihan.find(x=>x.id===id);modal('Kwitansi',`<div id="rc">${rcHTML(t)}</div><button onclick="printHTML($('rc').innerHTML)" class="${BT} w-full py-3 mt-3"><i class="fa-solid fa-print mr-1.5"></i>Cetak</button>`)}
+function kw(id){const t=S.tagihan.find(x=>x.id===id);modal('Kwitansi Pembayaran',`<div id="rc">${rcHTML(t)}</div><button onclick="printHTML($('rc').innerHTML)" class="${BT} w-full py-3 mt-3"><i class="fa-solid fa-print mr-1.5"></i>Cetak Kwitansi</button>`)}
 
 /* ===== Laporan ===== */
 function repRows(){
   const T=Object.fromEntries(S.tagihan.filter(t=>t.bulan===F.bln).map(t=>[t.pelangganId,t]));
-  return visP().filter(p=>p.aktif!==false||T[p.id]).map(p=>{const t=T[p.id];return{'ID':p.id,'Nama':p.nama,'Cabang':cabNama(p.cabangId),'Status':t?'Lunas':'Belum Bayar','Nominal':t?t.nominalBayar:0,'Tgl Bayar':t?new Date(t.tglBayar).toLocaleDateString('id-ID'):'-','Diinput Oleh':p.diinputOleh?.nama||'-','Dicatat Oleh':t?.dibayarOleh?.nama||'-','Keterangan':(t&&t.catatan)||p.keterangan||''}});
+  return visP().filter(p=>p.aktif!==false||T[p.id]).map(p=>{const t=T[p.id];return{'ID':p.id,'Nama':p.nama,'Alamat':p.alamat||'-','Cabang':cabNama(p.cabangId),'Status':t?'Lunas':'Belum Bayar','Nominal':t?t.nominalBayar:0,'Tgl Bayar':t?new Date(t.tglBayar).toLocaleDateString('id-ID'):'-','Diinput Oleh':p.diinputOleh?.nama||'-','Dicatat Oleh':t?.dibayarOleh?.nama||'-','Keterangan':(t&&t.catatan)||p.keterangan||''}});
 }
 function vLap(){return bar(`<select onchange="PG=1;F.bln=this.value;tLap()" class="${IN} sm:w-52">${monthOpts(F.bln)}</select>`,cabSel(),`<div class="ml-auto flex gap-2"><button onclick="xls()" class="${BT} !from-emerald-600 !to-emerald-500 !shadow-emerald-600/25"><i class="fa-solid fa-file-excel mr-1.5"></i>Excel</button><button onclick="cetakLap()" class="${BT} !from-slate-700 !to-slate-800 !shadow-slate-700/25"><i class="fa-solid fa-print mr-1.5"></i>Cetak</button></div>`)+`<div id="sum" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3"></div><div id="tbl" class="card overflow-hidden"></div>`}
-function lapTable(r,all){return table(['ID','Nama','Cabang','Status','Nominal','Tgl Bayar','Diinput Oleh','Dicatat Oleh','Keterangan'],r.map(x=>[x.ID,esc(x.Nama),esc(x.Cabang),`<b class="${x.Status==='Lunas'?'text-emerald-600':'text-orange-600'}">${x.Status}</b>`,rp(x.Nominal),x['Tgl Bayar'],esc(x['Diinput Oleh']),esc(x['Dicatat Oleh']),esc(x.Keterangan)]),all)}
+function lapTable(r,all){return table(['ID','Nama','Alamat','Cabang','Status','Nominal','Tgl Bayar','Diinput Oleh','Dicatat Oleh','Keterangan'],r.map(x=>[x.ID,esc(x.Nama),esc(x.Alamat),esc(x.Cabang),`<b class="${x.Status==='Lunas'?'text-emerald-600':'text-orange-600'}">${x.Status}</b>`,rp(x.Nominal),x['Tgl Bayar'],esc(x['Diinput Oleh']),esc(x['Dicatat Oleh']),esc(x.Keterangan)]),all)}
 function tLap(){
   const r=repRows(),tot=r.reduce((a,x)=>a+x.Nominal,0),l=r.filter(x=>x.Status==='Lunas').length;
   $('sum').innerHTML=card('Pelanggan',r.length,'fa-users','bg-gradient-to-tr from-blue-600 to-sky-500')+card('Lunas / Belum',l+' / '+(r.length-l),'fa-list-check','bg-gradient-to-tr from-orange-500 to-amber-400')+card('Total Masuk',rp(tot),'fa-wallet','bg-gradient-to-tr from-emerald-600 to-emerald-400');
@@ -448,15 +450,15 @@ function tLap(){
 function xls(){const r=repRows();if(!r.length)return toast('Tidak ada data','e');const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(r),'Laporan');XLSX.writeFile(wb,'Laporan_Tagihan_'+F.bln+'.xlsx');toast('Excel diunduh')}
 function cetakLap(){
   const r=repRows(),tot=r.reduce((a,x)=>a+x.Nominal,0);
-  const rows=r.map(x=>`<tr>${[x.ID,esc(x.Nama),esc(x.Cabang),x.Status,rp(x.Nominal),x['Tgl Bayar'],esc(x['Diinput Oleh']),esc(x['Dicatat Oleh']),esc(x.Keterangan)].map(c=>`<td style="border:1px solid #999;padding:4px">${c}</td>`).join('')}</tr>`).join('');
-  const head=['ID','Nama','Cabang','Status','Nominal','Tgl Bayar','Diinput Oleh','Dicatat Oleh','Keterangan'].map(c=>`<th style="border:1px solid #999;padding:4px;background:#eee;text-align:left">${c}</th>`).join('');
+  const rows=r.map(x=>`<tr>${[x.ID,esc(x.Nama),esc(x.Alamat),esc(x.Cabang),x.Status,rp(x.Nominal),x['Tgl Bayar'],esc(x['Diinput Oleh']),esc(x['Dicatat Oleh']),esc(x.Keterangan)].map(c=>`<td style="border:1px solid #999;padding:4px">${c}</td>`).join('')}</tr>`).join('');
+  const head=['ID','Nama','Alamat','Cabang','Status','Nominal','Tgl Bayar','Diinput Oleh','Dicatat Oleh','Keterangan'].map(c=>`<th style="border:1px solid #999;padding:4px;background:#eee;text-align:left">${c}</th>`).join('');
   printHTML(`<div style="font-family:sans-serif;font-size:11px"><h2 style="margin:0">${esc(brand())} - Laporan ${bl(F.bln)}</h2><p>Cabang: ${F.cab?esc(cabNama(F.cab)):'Semua'} • Dicetak oleh ${esc(me.nama)} • ${new Date().toLocaleString('id-ID')}</p><table style="border-collapse:collapse;width:100%"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table><h3>Total Pemasukan: ${rp(tot)}</h3></div>`);
 }
 
 /* ===== Manajemen Cabang (Admin) ===== */
 function vCab(){return `<div class="flex mb-4"><button onclick="fCab()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Cabang</button></div><div id="tbl" class="card overflow-hidden"></div>`}
 function tCab(){$('tbl').innerHTML=table(['ID','Kode','Nama Cabang','Alamat','Pelanggan','Petugas',''],S.cabang.map(c=>[`<span class="font-mono font-bold">${c.id}</span>`,esc(c.kode),`<b>${esc(c.nama)}</b>`,esc(c.alamat),S.pelanggan.filter(p=>p.cabangId===c.id).length,S.users.filter(u=>u.cabangId===c.id).length,`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="fCab('${c.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="delCab('${c.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button></div>`]))}
-function fCab(id){const c=S.cabang.find(x=>x.id===id)||{};modal(id?'Edit Cabang':'Tambah Cabang',`<form onsubmit="sCab(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama Cabang',`<input id="f-nama" required class="${IN}" value="${esc(c.nama)}">`)}${fld('Kode',`<input id="f-kode" required maxlength="6" class="${IN}" value="${esc(c.kode)}">`)}${fld('Alamat',`<input id="f-alamat" class="${IN}" value="${esc(c.alamat)}">`)}<button class="${BT} w-full py-3">Simpan</button></form>`)}
+function fCab(id){const c=S.cabang.find(x=>x.id===id)||{};modal(id?'Edit Cabang':'Tambah Cabang',`<form onsubmit="sCab(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama Cabang',`<input id="f-nama" required class="${IN}" value="${esc(c.nama)}">`)}${fld('Kode',`<input id="f-kode" required maxlength="6" class="${IN}" value="${esc(c.kode)}">`)}${fld('Alamat Cabang',`<input id="f-alamat" class="${IN}" value="${esc(c.alamat)}">`)}<button class="${BT} w-full py-3">Simpan Cabang</button></form>`)}
 async function sCab(e){
   e.preventDefault();const old=$('f-old').value,n=Math.max(0,...S.cabang.map(c=>+c.id.split('-')[1]||0))+1;
   const o={id:old||'CBG-'+String(n).padStart(3,'0'),nama:$('f-nama').value.trim(),kode:$('f-kode').value.trim().toUpperCase(),alamat:$('f-alamat').value.trim()};
@@ -472,7 +474,7 @@ function vUsr(){return `<div class="flex mb-4"><button onclick="fUsr()" class="$
 function tUsr(){$('tbl').innerHTML=table(['ID','Nama','Username','Cabang','Status',''],S.users.map(u=>[`<span class="font-mono font-bold">${u.id}</span>`,`<b>${esc(u.nama)}</b>`,esc(u.username),esc(cabNama(u.cabangId)),u.aktif!==false?pill('Aktif','g'):pill('Nonaktif','s'),`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="fUsr('${u.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="delUsr('${u.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button></div>`]))}
 function fUsr(id){
   const u=S.users.find(x=>x.id===id)||{};
-  modal(id?'Edit Petugas':'Tambah Petugas',`<form onsubmit="sUsr(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama',`<input id="f-nama" required class="${IN}" value="${esc(u.nama)}">`)}${fld('Username',`<input id="f-user" required autocapitalize="none" class="${IN}" value="${esc(u.username)}">`)}${fld('Password'+(id?' (kosongkan jika tidak diubah)':''),`<input id="f-pass" type="password" ${id?'':'required'} minlength="6" class="${IN}">`)}${fld('Cabang',`<select id="f-cab" required class="${IN}"><option value="">- Pilih -</option>${S.cabang.map(c=>`<option value="${c.id}" ${u.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`)}${fld('Status',`<select id="f-aktif" class="${IN}"><option value="1">Aktif</option><option value="0" ${u.aktif===false?'selected':''}>Nonaktif</option></select>`)}<button class="${BT} w-full py-3">Simpan</button></form>`);
+  modal(id?'Edit Petugas':'Tambah Petugas',`<form onsubmit="sUsr(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama Petugas',`<input id="f-nama" required class="${IN}" value="${esc(u.nama)}">`)}${fld('Username',`<input id="f-user" required autocapitalize="none" class="${IN}" value="${esc(u.username)}">`)}${fld('Password'+(id?' (kosongkan jika tidak diubah)':''),`<input id="f-pass" type="password" ${id?'':'required'} minlength="6" class="${IN}">`)}${fld('Cabang',`<select id="f-cab" required class="${IN}"><option value="">- Pilih Cabang -</option>${S.cabang.map(c=>`<option value="${c.id}" ${u.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`)}${fld('Status',`<select id="f-aktif" class="${IN}"><option value="1">Aktif</option><option value="0" ${u.aktif===false?'selected':''}>Nonaktif</option></select>`)}<button class="${BT} w-full py-3">Simpan Petugas</button></form>`);
 }
 async function sUsr(e){
   e.preventDefault();const old=S.users.find(x=>x.id===$('f-old').value),un=$('f-user').value.trim();
@@ -490,7 +492,7 @@ function vSet(){
   const tb=[['umum','Umum','fa-sliders'],['cabang','Cabang','fa-building'],['user','Petugas','fa-user-gear']];
   return `<div class="flex gap-1 p-1 bg-white/80 border border-slate-200 rounded-2xl mb-4 w-full sm:w-fit">${tb.map(x=>`<button onclick="setSub('${x[0]}')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${ST===x[0]?'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25':'text-slate-600 hover:bg-slate-100'}"><i class="fa-solid ${x[2]}"></i>${x[1]}</button>`).join('')}</div>`+({umum:vUmum,cabang:vCab,user:vUsr})[ST]();
 }
-function vUmum(){return `<form onsubmit="sSet(event)" class="card p-5 max-w-md space-y-3">${fld('Nama Aplikasi',`<input id="f-app" required class="${IN}" value="${esc(brand())}">`)}<button class="${BT} py-3 px-6">Simpan</button><p class="text-[11px] text-slate-500">Mode: ${IS_PREVIEW?'Preview (data sementara di memori)':'Terhubung ke Firebase'}</p></form>`}
+function vUmum(){return `<form onsubmit="sSet(event)" class="card p-5 max-w-md space-y-3">${fld('Nama Aplikasi',`<input id="f-app" required class="${IN}" value="${esc(brand())}">`)}<button class="${BT} py-3 px-6">Simpan Pengaturan</button><p class="text-[11px] text-slate-500">Mode: ${IS_PREVIEW?'Preview (data sementara di memori)':'Terhubung ke Firebase'}</p></form>`}
 async function sSet(e){e.preventDefault();if(await safe(()=>DB.put('settings',{id:'app',namaAplikasi:$('f-app').value.trim()}))){applyBrand();toast('Pengaturan disimpan')}}
 
 /* ===== Boot ===== */
