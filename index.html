@@ -5,66 +5,153 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2563eb">
 <meta name="color-scheme" content="light only">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Buku Kas">
 <title>BUKU KAS - Tagihan Internet</title>
-<link rel="manifest" href="data:application/json,%7B%22name%22:%22Buku%20Kas%22,%22short_name%22:%22BukuKas%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23ffffff%22,%22theme_color%22:%22%232563eb%22%7D">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link id="mf" rel="manifest" href="">
+<link id="ai" rel="apple-touch-icon" href="">
+<script>
+/* Manifest PWA sebagai Data URI (dibangun sekali di <head>) */
+(function(){
+  var svg="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#2563eb'/><stop offset='1' stop-color='#10b981'/></linearGradient></defs><rect width='512' height='512' rx='112' fill='url(#g)'/><g fill='none' stroke='white' stroke-width='36' stroke-linecap='round'><path d='M96 220A230 230 0 0 1 416 220'/><path d='M146 272A160 160 0 0 1 366 272'/><path d='M196 324A90 90 0 0 1 316 324'/></g><circle cx='256' cy='380' r='24' fill='white'/></svg>";
+  var icon="data:image/svg+xml,"+encodeURIComponent(svg);
+  var m={name:"Buku Kas - Tagihan Internet",short_name:"Buku Kas",description:"Aplikasi pencatatan tagihan internet bulanan",start_url:".",scope:".",display:"standalone",orientation:"portrait",background_color:"#ffffff",theme_color:"#2563eb",icons:[{src:icon,sizes:"any",type:"image/svg+xml",purpose:"any maskable"}]};
+  document.getElementById("mf").href="data:application/manifest+json,"+encodeURIComponent(JSON.stringify(m));
+  document.getElementById("ai").href=icon;
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-#bk{color-scheme:light;position:fixed;inset:0;z-index:2147483000;background:#fff;font-family:Inter,system-ui,sans-serif;color:#1e293b;overflow:hidden}
+:root{--p:#2563eb;--p2:#4f46e5;--ok:#10b981;--warn:#f97316;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px)}
+#bk{color-scheme:light;position:fixed;inset:0;z-index:2147483000;background:#f8fafc;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--ink);overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
 #bk *{box-sizing:border-box}
-.glass{background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(226,232,240,.9)}
-aside .nv.act{background:#2563eb;color:#fff}
-#nav-bot .nv.act{background:#dbeafe;color:#1d4ed8}
+#bk button{cursor:pointer;font-family:inherit}
+#bk input,#bk select,#bk textarea{font-family:inherit;font-size:16px}
+@media(min-width:768px){#bk input,#bk select,#bk textarea{font-size:13px}}
+.glass{background:rgba(255,255,255,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(226,232,240,.85)}
+.card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(226,232,240,.9);border-radius:1.25rem;box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(15,23,42,.08)}
+.bgmesh{background:radial-gradient(600px 300px at 90% -10%,rgba(99,102,241,.14),transparent 60%),radial-gradient(500px 300px at -10% 10%,rgba(16,185,129,.12),transparent 60%),#f8fafc}
+.hero{background:linear-gradient(135deg,#2563eb 0%,#4f46e5 55%,#7c3aed 100%);position:relative;overflow:hidden}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.1)}
+.hero::before{width:220px;height:220px;right:-60px;top:-80px}
+.hero::after{width:150px;height:150px;right:90px;bottom:-90px}
+aside .nv{position:relative}
+aside .nv.act{background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;box-shadow:0 8px 18px -8px rgba(37,99,235,.7)}
+#nav-bot{bottom:calc(var(--safe-b) + 12px);box-shadow:0 18px 40px -12px rgba(15,23,42,.35)}
+#nav-bot .nv{transition:all .2s}
+#nav-bot .nv.act{background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;transform:translateY(-4px);box-shadow:0 10px 18px -8px rgba(37,99,235,.8)}
 #print-area{display:none}
+.fade{animation:fade .35s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sheet{animation:sheet .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sheet{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+.stagger>*{animation:fade .45s ease both}
+.stagger>*:nth-child(2){animation-delay:.05s}.stagger>*:nth-child(3){animation-delay:.1s}.stagger>*:nth-child(4){animation-delay:.15s}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:800}
+.pill.g{background:#d1fae5;color:#047857}.pill.o{background:#ffedd5;color:#c2410c}.pill.s{background:#e2e8f0;color:#475569}
+.ico{width:2.6rem;height:2.6rem;border-radius:.85rem;display:flex;align-items:center;justify-content:center;color:#fff;flex:none}
+.rt{width:100%;font-size:12px;border-collapse:separate;border-spacing:0}
+.rt th{padding:.75rem;text-align:left;white-space:nowrap;background:#f8fafc;color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:.04em;font-weight:800}
+.rt td{padding:.75rem;vertical-align:middle;border-top:1px solid #f1f5f9}
+.rt tbody tr:hover td{background:rgba(239,246,255,.6)}
+.act-btn{display:inline-flex;align-items:center;gap:4px;padding:.35rem .6rem;border-radius:.6rem;font-size:11px;font-weight:700;transition:.15s}
+.act-btn:active{transform:scale(.95)}
+.ab-b{background:#eff6ff;color:#1d4ed8}.ab-o{background:#fff7ed;color:#c2410c}.ab-r{background:#fef2f2;color:#b91c1c}.ab-g{background:#ecfdf5;color:#047857}
+@media(max-width:767px){
+  .rt thead{display:none}
+  .rt,.rt tbody{display:block}
+  .rt tr{display:block;margin:.65rem;padding:.35rem .85rem;border:1px solid #e2e8f0;border-radius:1rem;background:#fff;box-shadow:0 6px 16px -10px rgba(15,23,42,.18)}
+  .rt td{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:right;padding:.5rem 0;border-top:1px dashed #eef2f7}
+  .rt td:first-child{border-top:0}
+  .rt td::before{content:attr(data-label);flex:none;text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8}
+  .rt td[data-label=""]{justify-content:flex-end;padding-top:.65rem}
+  .rt td[data-label=""]::before{display:none}
+  .rt tbody tr:hover td{background:transparent}
+  .rt td.emp{display:block;text-align:center}.rt td.emp::before{display:none}
+}
+.ldr{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
 @media print{body *{visibility:hidden}#print-area,#print-area *{visibility:visible}#print-area{display:block!important;position:fixed;left:0;top:0;width:100%;background:#fff;padding:16px;z-index:2147483647}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <div id="bk">
 
+<!-- BANNER OFFLINE -->
+<div id="net" class="hidden fixed top-0 inset-x-0 z-[70] text-center text-[11px] font-bold text-white bg-slate-800 py-1.5" style="padding-top:calc(var(--safe-t) + 6px)"><i class="fa-solid fa-wifi-slash mr-1"></i>Anda sedang offline - data tidak dapat disimpan</div>
+
 <!-- LOGIN (bersih) -->
-<div id="login" class="h-full flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-white to-sky-100">
-  <form onsubmit="doLogin(event)" class="glass rounded-3xl shadow-2xl p-8 w-full max-w-sm space-y-4">
-    <div class="text-center">
-      <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-blue-600 to-emerald-500 text-white flex items-center justify-center text-2xl shadow-lg mb-2"><i class="fa-solid fa-wifi"></i></div>
-      <h1 id="brand-login" class="text-xl font-extrabold">BUKU KAS</h1>
-      <p class="text-[11px] font-semibold text-blue-600 uppercase tracking-wider">Aplikasi Tagihan Internet</p>
+<div id="login" class="h-full overflow-y-auto bgmesh">
+  <div class="min-h-full grid md:grid-cols-2">
+    <div class="hero hidden md:flex flex-col justify-between p-12 text-white">
+      <div class="relative z-10 flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center text-lg"><i class="fa-solid fa-wifi"></i></div><span class="font-extrabold tracking-wide">BUKU KAS</span></div>
+      <div class="relative z-10">
+        <h2 class="text-4xl font-extrabold leading-tight mb-4">Kelola tagihan<br>internet jadi lebih mudah.</h2>
+        <p class="text-blue-100 text-sm max-w-sm mb-8">Catat pembayaran pelanggan, pantau tunggakan per cabang, dan cetak kwitansi dalam hitungan detik.</p>
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center"><i class="fa-solid fa-bolt"></i></span>Input pembayaran sekali tap</div>
+          <div class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center"><i class="fa-solid fa-building"></i></span>Multi cabang &amp; multi petugas</div>
+          <div class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center"><i class="fa-solid fa-file-excel"></i></span>Laporan Excel &amp; cetak otomatis</div>
+        </div>
+      </div>
+      <div class="relative z-10 text-[11px] text-blue-100">Dapat dipasang seperti aplikasi di HP &amp; komputer</div>
     </div>
-    <div><label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Email Admin / Username Petugas</label><input id="lu" required autocomplete="username" class="w-full py-2.5 px-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
-    <div><label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Password</label><input id="lp" type="password" required autocomplete="current-password" class="w-full py-2.5 px-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
-    <div id="le" class="hidden p-2.5 rounded-xl bg-red-50 text-red-600 text-xs text-center border border-red-200">Login gagal. Periksa kembali akun Anda.</div>
-    <button class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg active:scale-95 transition">Masuk</button>
-  </form>
+    <div class="flex items-center justify-center p-5" style="padding-top:calc(var(--safe-t) + 20px);padding-bottom:calc(var(--safe-b) + 20px)">
+      <form onsubmit="doLogin(event)" class="card p-7 w-full max-w-sm space-y-4 fade" style="box-shadow:0 30px 60px -25px rgba(37,99,235,.35)">
+        <div class="text-center">
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-emerald-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30 mb-3"><i class="fa-solid fa-wifi"></i></div>
+          <h1 id="brand-login" class="text-xl font-extrabold">BUKU KAS</h1>
+          <p class="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Aplikasi Tagihan Internet</p>
+        </div>
+        <div><label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Email Admin / Username Petugas</label>
+          <div class="relative"><i class="fa-regular fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i><input id="lu" required autocomplete="username" autocapitalize="none" class="w-full py-3 pl-10 pr-3 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"></div></div>
+        <div><label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Password</label>
+          <div class="relative"><i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i><input id="lp" type="password" required autocomplete="current-password" class="w-full py-3 pl-10 pr-11 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"><button type="button" onclick="togglePw()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 w-7 h-7"><i id="eye" class="fa-regular fa-eye"></i></button></div></div>
+        <div id="le" class="hidden p-2.5 rounded-xl bg-red-50 text-red-600 text-xs text-center border border-red-200">Login gagal. Periksa kembali akun Anda.</div>
+        <button id="lb" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 active:scale-95 hover:brightness-110 transition">Masuk</button>
+        <button type="button" id="inst-login" onclick="installApp()" class="hidden w-full py-2.5 text-xs font-bold text-blue-700 bg-blue-50 rounded-xl"><i class="fa-solid fa-download mr-1"></i>Pasang Aplikasi</button>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- APLIKASI -->
-<div id="app" class="hidden h-full bg-slate-50">
-  <aside class="hidden md:flex fixed inset-y-0 left-0 w-60 flex-col justify-between bg-white text-slate-800 border-r border-slate-200 p-4 z-30">
+<div id="app" class="hidden h-full bgmesh">
+  <aside class="hidden md:flex fixed inset-y-0 left-0 w-64 flex-col justify-between bg-white/90 backdrop-blur text-slate-800 border-r border-slate-200 p-4 z-30">
     <div>
-      <div class="flex items-center gap-3 mb-6 px-1"><div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center"><i class="fa-solid fa-wifi"></i></div><span id="brand" class="font-extrabold">BUKU KAS</span></div>
+      <div class="flex items-center gap-3 mb-7 px-1"><div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 text-white flex items-center justify-center shadow-md shadow-blue-500/30"><i class="fa-solid fa-wifi"></i></div><div><span id="brand" class="font-extrabold block leading-tight">BUKU KAS</span><span class="text-[10px] text-slate-400 font-semibold">Tagihan Internet</span></div></div>
       <nav id="nav-side" class="space-y-1"></nav>
     </div>
-    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs"><div id="u-nama" class="font-bold truncate"></div><div id="u-info" class="text-slate-500 truncate"></div></div>
+    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3"><div id="u-av" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-blue-500 text-white font-extrabold flex items-center justify-center flex-none"></div><div class="min-w-0 text-xs"><div id="u-nama" class="font-bold truncate"></div><div id="u-info" class="text-slate-500 truncate"></div></div></div>
   </aside>
-  <div class="md:ml-60 h-full flex flex-col">
-    <header class="glass flex items-center justify-between px-4 py-3 border-b z-20">
-      <div><h1 id="ttl" class="font-extrabold text-base"></h1><p id="sub" class="text-[11px] text-slate-500"></p></div>
-      <div class="flex gap-2">
-        <button onclick="refresh()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold"><i id="ri" class="fa-solid fa-arrows-rotate text-blue-600"></i><span class="hidden sm:inline ml-1.5">Refresh</span></button>
-        <button onclick="logout()" class="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold"><i class="fa-solid fa-right-from-bracket"></i><span class="hidden sm:inline ml-1.5">Keluar</span></button>
+  <div class="md:ml-64 h-full flex flex-col">
+    <header class="glass flex items-center justify-between gap-2 px-4 pb-3 border-b z-20" style="padding-top:calc(var(--safe-t) + 12px)">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="md:hidden w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 text-white flex items-center justify-center flex-none text-sm"><i class="fa-solid fa-wifi"></i></div>
+        <div class="min-w-0"><h1 id="ttl" class="font-extrabold text-base truncate"></h1><p id="sub" class="text-[11px] text-slate-500 truncate"></p></div>
+      </div>
+      <div class="flex gap-2 flex-none">
+        <button id="inst-btn" onclick="installApp()" class="hidden px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold"><i class="fa-solid fa-download"></i><span class="hidden sm:inline ml-1.5">Pasang</span></button>
+        <button onclick="refresh()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold"><i id="ri" class="fa-solid fa-arrows-rotate text-blue-600"></i><span class="hidden sm:inline ml-1.5">Refresh</span></button>
+        <button onclick="logout()" class="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold"><i class="fa-solid fa-right-from-bracket"></i><span class="hidden sm:inline ml-1.5">Keluar</span></button>
       </div>
     </header>
-    <main id="main" class="flex-1 overflow-y-auto p-4 pb-28 md:pb-6"></main>
+    <main id="main" class="flex-1 overflow-y-auto p-4 md:p-6 pb-32 md:pb-8"></main>
   </div>
-  <nav id="nav-bot" class="md:hidden fixed bottom-3 inset-x-3 glass rounded-2xl shadow-xl flex p-1 z-30"></nav>
+  <nav id="nav-bot" class="md:hidden fixed inset-x-3 glass rounded-3xl flex p-1.5 z-30"></nav>
 </div>
 
 <div id="modal"></div>
 <div id="print-area"></div>
-<div id="toast" class="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-white text-xs font-semibold shadow-xl transition-all opacity-0 pointer-events-none z-[60]"></div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-xl text-white text-xs font-bold shadow-xl transition-all opacity-0 pointer-events-none z-[80] max-w-[90%] text-center" style="bottom:calc(var(--safe-b) + 96px)"></div>
 </div>
 
 <script>
@@ -80,13 +167,19 @@ const firebaseConfig = {
   appId: "1:131944543436:web:e3e8fd9f3fcf18a5d93e69"
 };
 
-/* ===== PWA: service worker via Blob ===== */
+/* ===== PWA: service worker via Blob + tombol pasang + status offline ===== */
 (function(){try{if('serviceWorker' in navigator){const js="self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',()=>{});";navigator.serviceWorker.register(URL.createObjectURL(new Blob([js],{type:'text/javascript'}))).catch(()=>{})}}catch(e){}})();
+let DP=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DP=e;['inst-btn','inst-login'].forEach(i=>{const x=document.getElementById(i);if(x)x.classList.remove('hidden')})});
+window.addEventListener('appinstalled',()=>{DP=null;['inst-btn','inst-login'].forEach(i=>{const x=document.getElementById(i);if(x)x.classList.add('hidden')})});
+async function installApp(){if(!DP)return toast('Gunakan menu browser: "Tambahkan ke layar utama"');DP.prompt();try{await DP.userChoice}catch(e){}DP=null;['inst-btn','inst-login'].forEach(i=>{const x=document.getElementById(i);if(x)x.classList.add('hidden')})}
+function netChk(){document.getElementById('net').classList.toggle('hidden',navigator.onLine)}
+window.addEventListener('online',netChk);window.addEventListener('offline',netChk);
 
 /* ===== Helper ===== */
 const $=i=>document.getElementById(i);
-const IN='w-full py-2 px-3 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500';
-const BT='px-3 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 transition';
+const IN='w-full py-2.5 px-3 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+const BT='inline-flex items-center justify-center px-3.5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/25 hover:brightness-110 active:scale-95 transition';
 const S={cabang:[],users:[],pelanggan:[],tagihan:[],settings:[]};
 let me=null,tab='dashboard',F={cab:'',bln:mk(new Date()),q:''},FB=null,charts=[],CH={};
 function mk(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
@@ -102,20 +195,23 @@ const canSee=x=>isA()||(x.diinputOleh&&x.diinputOleh.uid===me.uid);
 const visP=()=>S.pelanggan.filter(canSee).filter(p=>!F.cab||p.cabangId===F.cab);
 const visT=()=>S.tagihan.filter(canSee).filter(t=>!F.cab||t.cabangId===F.cab);
 const uid6=()=>Date.now().toString(36).toUpperCase().slice(-6);
-function toast(m,t){const e=$('toast');e.textContent=m;e.style.background=t==='e'?'#dc2626':'#0f172a';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,2600)}
+const ini=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const pill=(t,c)=>`<span class="pill ${c}">${t}</span>`;
+function toast(m,t){const e=$('toast');e.innerHTML=(t==='e'?'<i class="fa-solid fa-circle-exclamation mr-1.5"></i>':'<i class="fa-solid fa-circle-check mr-1.5 text-emerald-400"></i>')+esc(m);e.style.background=t==='e'?'#dc2626':'#0f172a';e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.opacity=0,2800)}
 async function safe(fn){try{await fn();return true}catch(e){toast('Gagal: '+(e.code||e.message),'e');return false}}
 const fld=(l,i)=>`<div><label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">${l}</label>${i}</div>`;
-let PG=1;const PER=10;
+function togglePw(){const i=$('lp'),s=i.type==='password';i.type=s?'text':'password';$('eye').className=s?'fa-regular fa-eye-slash':'fa-regular fa-eye'}
+let PG=1;const PER=7;let ST='umum';
 function table(h,rows,all){
   const tot=rows.length,pages=Math.max(1,Math.ceil(tot/PER));if(PG>pages)PG=pages;
   const v=all?rows:rows.slice((PG-1)*PER,PG*PER),nums=[];
-  for(let i=Math.max(1,PG-2);i<=Math.min(pages,PG+2);i++)nums.push(`<button onclick="PG=${i};pgr()" class="px-3 py-1.5 rounded-lg border font-bold ${i===PG?'bg-blue-600 text-white border-blue-600':'bg-white border-slate-200 text-slate-600'}">${i}</button>`);
-  const bt='px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold disabled:opacity-40';
+  for(let i=Math.max(1,PG-1);i<=Math.min(pages,PG+1);i++)nums.push(`<button onclick="PG=${i};pgr()" class="w-8 h-8 rounded-lg border font-bold ${i===PG?'bg-blue-600 text-white border-blue-600':'bg-white border-slate-200 text-slate-600'}">${i}</button>`);
+  const bt='w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold disabled:opacity-40';
   const pager=all||tot<=PER?'':`<div class="flex flex-wrap items-center justify-between gap-2 p-3 border-t border-slate-100 text-xs text-slate-500"><span>Hal ${PG} / ${pages} &bull; ${tot} data</span><div class="flex gap-1"><button ${PG<=1?'disabled':''} onclick="pg(-1)" class="${bt}">&laquo;</button>${nums.join('')}<button ${PG>=pages?'disabled':''} onclick="pg(1)" class="${bt}">&raquo;</button></div></div>`;
-  return `<table class="w-full text-xs"><thead class="bg-slate-50 text-slate-500 uppercase text-[10px]"><tr>${h.map(x=>`<th class="p-3 text-left whitespace-nowrap">${x}</th>`).join('')}</tr></thead><tbody class="divide-y divide-slate-100">${v.length?v.map(r=>`<tr class="hover:bg-blue-50/40">${r.map(c=>`<td class="p-3 align-middle">${c}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${h.length}" class="p-8 text-center text-slate-400">Belum ada data</td></tr>`}</tbody></table>`+pager}
-const pgr=()=>({pelanggan:tPlg,bayar:tByr,laporan:tLap,cabang:tCab,user:tUsr})[tab]();
+  return `<table class="rt"><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${v.length?v.map(r=>`<tr>${r.map((c,i)=>`<td data-label="${esc(h[i])}">${c}</td>`).join('')}</tr>`).join(''):`<tr><td class="emp" colspan="${h.length}" style="text-align:center;padding:2.5rem 1rem;color:#94a3b8"><i class="fa-regular fa-folder-open text-2xl block mb-2"></i>Belum ada data</td></tr>`}</tbody></table>`+pager}
+const pgr=()=>({pelanggan:tPlg,bayar:tByr,laporan:tLap,setting:()=>({cabang:tCab,user:tUsr})[ST]()})[tab]();
 const pg=d=>{PG+=d;pgr()};
-function modal(t,h){$('modal').innerHTML=`<div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onclick="if(event.target===this)closeModal()"><div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-full overflow-y-auto shadow-2xl"><div class="flex justify-between items-center mb-3"><h3 class="font-extrabold">${t}</h3><button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button></div>${h}</div></div>`}
+function modal(t,h){$('modal').innerHTML=`<div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50" onclick="if(event.target===this)closeModal()"><div class="sheet bg-white rounded-t-3xl sm:rounded-3xl p-5 w-full sm:max-w-md max-h-[92%] overflow-y-auto shadow-2xl" style="padding-bottom:calc(var(--safe-b) + 20px)"><div class="w-10 h-1 rounded-full bg-slate-200 mx-auto mb-3 sm:hidden"></div><div class="flex justify-between items-center mb-4"><h3 class="font-extrabold text-base">${t}</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800"><i class="fa-solid fa-xmark"></i></button></div>${h}</div></div>`}
 const closeModal=()=>$('modal').innerHTML='';
 function printHTML(h){$('print-area').innerHTML=h;window.print()}
 const cabSel=()=>isA()?`<select onchange="PG=1;F.cab=this.value;render()" class="${IN} sm:w-48"><option value="">Semua Cabang</option>${S.cabang.map(c=>`<option value="${c.id}" ${F.cab===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`:'';
@@ -167,7 +263,9 @@ async function autoSetupDatabase(){
 
 /* ===== Auth ===== */
 async function doLogin(e){
-  e.preventDefault();const u=$('lu').value.trim(),p=$('lp').value;$('le').classList.add('hidden');
+  e.preventDefault();const u=$('lu').value.trim(),p=$('lp').value,b=$('lb');$('le').classList.add('hidden');
+  b.disabled=true;b.innerHTML='<span class="ldr"></span> Memproses...';
+  const reset=()=>{b.disabled=false;b.textContent='Masuk'};
   try{
     if(u.includes('@')){
       if(IS_PREVIEW){if(u==='admin@bukukas.com'&&p==='admin123')me={uid:'ADMIN-1',nama:'Administrator',role:'Admin',cabangId:''};else throw 0}
@@ -178,38 +276,40 @@ async function doLogin(e){
       const h=await sha(p),x=list.find(z=>z.username===u&&z.passwordHash===h&&z.aktif!==false);
       if(!x)throw 0;me={uid:x.id,nama:x.nama,role:'Petugas',cabangId:x.cabangId};
     }
-  }catch(err){$('le').classList.remove('hidden');return}
+  }catch(err){$('le').textContent='Login gagal. Periksa kembali akun Anda.';$('le').classList.remove('hidden');reset();return}
   try{
     if(!IS_PREVIEW&&isA())await autoSetupDatabase();
     await DB.load();
   }catch(err){toast('Gagal memuat data: '+(err.code||err.message),'e')}
-  startApp();
+  reset();startApp();
 }
 function startApp(){
   $('login').classList.add('hidden');$('app').classList.remove('hidden');
-  $('u-nama').textContent=me.nama;$('u-info').textContent=me.role+(me.cabangId?' • '+cabNama(me.cabangId):' • Semua Cabang');
+  $('u-nama').textContent=me.nama;$('u-av').textContent=ini(me.nama);$('u-info').textContent=me.role+(me.cabangId?' • '+cabNama(me.cabangId):' • Semua Cabang');
   $('sub').textContent=me.nama+' ('+me.role+')'+(me.cabangId?' • '+cabNama(me.cabangId):'');
   applyBrand();buildNav();go('dashboard');
 }
 function applyBrand(){$('brand').textContent=brand();$('brand-login').textContent=brand()}
-function logout(){if(!IS_PREVIEW&&FB&&isA())FB.signOut(FB.auth);me=null;F.cab='';$('lp').value='';$('app').classList.add('hidden');$('login').classList.remove('hidden')}
+function logout(){if(!IS_PREVIEW&&FB&&isA())FB.signOut(FB.auth);me=null;F.cab='';$('lp').value='';closeModal();$('app').classList.add('hidden');$('login').classList.remove('hidden')}
 async function refresh(){$('ri').classList.add('fa-spin');try{await DB.load();render();toast('Data diperbarui')}catch(e){toast('Gagal memuat data','e')}$('ri').classList.remove('fa-spin')}
 
 /* ===== Navigasi ===== */
-const MENU=[['dashboard','Dashboard','fa-gauge'],['pelanggan','Pelanggan','fa-users'],['bayar','Bayar','fa-money-bill-wave'],['laporan','Laporan','fa-file-lines'],['cabang','Cabang','fa-building',1],['user','User','fa-user-gear',1],['setting','Atur','fa-gear',1]];
-const TITLES={dashboard:'Dashboard',pelanggan:'Data Pelanggan',bayar:'Input Pembayaran',laporan:'Laporan',cabang:'Manajemen Cabang',user:'Manajemen User Petugas',setting:'Pengaturan'};
+const MENU=[['dashboard','Dashboard','fa-gauge-high'],['pelanggan','Pelanggan','fa-users'],['bayar','Bayar','fa-money-bill-wave'],['laporan','Laporan','fa-file-lines'],['setting','Atur','fa-gear',1]];
+const TITLES={dashboard:'Dashboard',pelanggan:'Data Pelanggan',bayar:'Input Pembayaran',laporan:'Laporan',setting:'Pengaturan'};
 function buildNav(){
   const m=MENU.filter(x=>!x[3]||isA());
-  $('nav-side').innerHTML=m.map(x=>`<button onclick="go('${x[0]}')" data-t="${x[0]}" class="nv w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100 transition"><i class="fa-solid ${x[2]} w-5"></i>${x[1]==='Atur'?'Pengaturan':x[1]==='Bayar'?'Pembayaran':x[1]}</button>`).join('');
-  $('nav-bot').innerHTML=m.map(x=>`<button onclick="go('${x[0]}')" data-t="${x[0]}" class="nv flex-1 flex flex-col items-center py-1.5 rounded-xl text-[9px] font-semibold text-slate-500"><i class="fa-solid ${x[2]} text-base mb-0.5"></i>${x[1]}</button>`).join('');
+  $('nav-side').innerHTML=m.map(x=>`<button onclick="go('${x[0]}')" data-t="${x[0]}" class="nv w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition"><i class="fa-solid ${x[2]} w-5 text-center"></i>${x[1]==='Atur'?'Pengaturan':x[1]==='Bayar'?'Pembayaran':x[1]}</button>`).join('');
+  const b=x=>`<button onclick="go('${x[0]}')" data-t="${x[0]}" class="nv flex-1 flex flex-col items-center justify-center py-2 rounded-2xl text-[10px] font-bold text-slate-500"><i class="fa-solid ${x[2]} text-base mb-0.5"></i>${x[1]}</button>`;
+  $('nav-bot').innerHTML=m.map(b).join('');
 }
-function go(t){tab=t;F.q='';PG=1;document.querySelectorAll('.nv').forEach(b=>b.classList.toggle('act',b.dataset.t===t));render()}
-const VIEWS={dashboard:vDash,pelanggan:vPlg,bayar:vByr,laporan:vLap,cabang:vCab,user:vUsr,setting:vSet};
+function go(t){tab=t;F.q='';PG=1;if(t==='setting')ST='umum';document.querySelectorAll('.nv').forEach(b=>b.classList.toggle('act',b.dataset.t===t));$('main').scrollTop=0;render()}
+const VIEWS={dashboard:vDash,pelanggan:vPlg,bayar:vByr,laporan:vLap,setting:vSet};
 function render(){
-  $('ttl').textContent=TITLES[tab];$('main').innerHTML=VIEWS[tab]();
-  const f={dashboard:drawCharts,pelanggan:tPlg,bayar:tByr,laporan:tLap,cabang:tCab,user:tUsr}[tab];if(f)f();
+  $('ttl').textContent=TITLES[tab];$('main').innerHTML='<div class="fade max-w-6xl mx-auto">'+VIEWS[tab]()+'</div>';
+  const f={dashboard:drawCharts,pelanggan:tPlg,bayar:tByr,laporan:tLap,setting:()=>{const g={cabang:tCab,user:tUsr}[ST];if(g)g()}}[tab];if(f)f();
 }
-const card=(l,v,i,c)=>`<div class="glass rounded-2xl p-4 flex items-center gap-3"><div class="w-11 h-11 rounded-xl ${c} flex items-center justify-center text-white"><i class="fa-solid ${i}"></i></div><div><div class="text-[11px] text-slate-500 font-semibold">${l}</div><div class="text-lg font-extrabold">${v}</div></div></div>`;
+const card=(l,v,i,c)=>`<div class="card p-4 flex items-center gap-3"><div class="ico ${c}"><i class="fa-solid ${i}"></i></div><div class="min-w-0"><div class="text-[11px] text-slate-500 font-bold">${l}</div><div class="text-lg font-extrabold truncate">${v}</div></div></div>`;
+const bar=(...c)=>`<div class="flex flex-wrap gap-2 mb-4 items-center">${c.join('')}</div>`;
 
 /* ===== Dashboard ===== */
 function vDash(){
@@ -217,25 +317,36 @@ function vDash(){
   const ids=new Set(Tb.map(t=>t.pelangganId)),belum=P.filter(p=>!ids.has(p.id)).length,tot=Tb.reduce((a,t)=>a+t.nominalBayar,0);
   const y=new Date().getFullYear();CH.m=Array(12).fill(0);T.filter(t=>t.bulan.startsWith(y+'-')).forEach(t=>CH.m[+t.bulan.slice(5)-1]+=t.nominalBayar);
   CH.l=ids.size;CH.b=belum;
-  return `<div class="flex flex-wrap gap-2 mb-4 items-center"><span class="text-xs font-semibold text-slate-500">Periode: ${bl(k)}</span>${cabSel()}</div>
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">${card('Pelanggan Aktif',P.length,'fa-users','bg-blue-600')}${card('Sudah Bayar',ids.size,'fa-circle-check','bg-emerald-500')}${card('Belum Bayar',belum,'fa-clock','bg-orange-500')}${card('Pemasukan Bulan Ini',rp(tot),'fa-wallet','bg-violet-600')}</div>
-  <div class="grid lg:grid-cols-3 gap-3"><div class="glass rounded-2xl p-4 lg:col-span-2"><div class="text-xs font-bold mb-2">Pemasukan per Bulan ${y}</div><div class="h-64"><canvas id="c1"></canvas></div></div><div class="glass rounded-2xl p-4"><div class="text-xs font-bold mb-2">Status Bulan Ini</div><div class="h-64"><canvas id="c2"></canvas></div></div></div>`;
+  const lunasP=P.filter(p=>ids.has(p.id)).length,pct=P.length?Math.round(lunasP/P.length*100):0;
+  const hr=new Date().getHours(),sap=hr<11?'Selamat pagi':hr<15?'Selamat siang':hr<18?'Selamat sore':'Selamat malam';
+  const rec=[...T].sort((a,b)=>String(b.tglBayar).localeCompare(String(a.tglBayar))).slice(0,5);
+  return `<div class="hero rounded-3xl p-5 md:p-7 text-white mb-4 shadow-xl shadow-blue-600/20 fade">
+    <div class="relative z-10 flex flex-wrap items-end justify-between gap-4">
+      <div><div class="text-blue-100 text-xs font-semibold">${sap}, ${esc(me.nama.split(' ')[0])} 👋</div><div class="text-[11px] text-blue-100/80 mt-0.5">Pemasukan ${bl(k)}</div><div class="text-3xl md:text-4xl font-extrabold mt-1">${rp(tot)}</div></div>
+      <div class="w-full sm:w-64"><div class="flex justify-between text-[11px] font-bold mb-1.5"><span>Progres penagihan</span><span>${pct}%</span></div><div class="h-2.5 rounded-full bg-white/25 overflow-hidden"><div class="h-full rounded-full bg-white" style="width:${pct}%;transition:width 1s"></div></div><div class="text-[10px] text-blue-100 mt-1.5">${lunasP} dari ${P.length} pelanggan sudah lunas</div></div>
+    </div></div>
+  <div class="mb-3">${isA()?cabSel():''}</div>
+  <div class="stagger grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">${card('Pelanggan Aktif',P.length,'fa-users','bg-gradient-to-tr from-blue-600 to-sky-500')}${card('Sudah Bayar',ids.size,'fa-circle-check','bg-gradient-to-tr from-emerald-600 to-emerald-400')}${card('Belum Bayar',belum,'fa-clock','bg-gradient-to-tr from-orange-500 to-amber-400')}${card('Pemasukan',rp(tot),'fa-wallet','bg-gradient-to-tr from-violet-600 to-fuchsia-500')}</div>
+  <div class="grid lg:grid-cols-3 gap-3 mb-3"><div class="card p-4 lg:col-span-2"><div class="text-sm font-extrabold mb-3">Pemasukan per Bulan ${y}</div><div class="h-60 md:h-64"><canvas id="c1"></canvas></div></div><div class="card p-4"><div class="text-sm font-extrabold mb-3">Status Bulan Ini</div><div class="h-60 md:h-64"><canvas id="c2"></canvas></div></div></div>
+  <div class="card p-4"><div class="text-sm font-extrabold mb-3">Pembayaran Terbaru</div>${rec.length?`<div class="divide-y divide-slate-100">${rec.map(t=>`<div class="flex items-center gap-3 py-2.5"><div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-extrabold flex-none">${ini(t.nama)}</div><div class="min-w-0 flex-1"><div class="text-xs font-bold truncate">${esc(t.nama)}</div><div class="text-[10px] text-slate-400">${bl(t.bulan)} • ${new Date(t.tglBayar).toLocaleDateString('id-ID')}</div></div><div class="text-xs font-extrabold text-emerald-600">${rp(t.nominalBayar)}</div></div>`).join('')}</div>`:'<div class="text-center text-slate-400 text-xs py-6">Belum ada pembayaran</div>'}</div>`;
 }
 function drawCharts(){
   charts.forEach(c=>c.destroy());charts=[];if(!window.Chart)return;
-  charts.push(new Chart($('c1'),{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],datasets:[{data:CH.m,backgroundColor:'#2563eb',borderRadius:6}]},options:{plugins:{legend:{display:false}},maintainAspectRatio:false}}));
-  charts.push(new Chart($('c2'),{type:'doughnut',data:{labels:['Lunas','Belum'],datasets:[{data:[CH.l,CH.b],backgroundColor:['#10b981','#f97316']}]},options:{maintainAspectRatio:false}}));
+  const ctx=$('c1').getContext('2d'),g=ctx.createLinearGradient(0,0,0,260);g.addColorStop(0,'#4f46e5');g.addColorStop(1,'#60a5fa');
+  const sh=v=>v>=1e6?(v/1e6)+' jt':v>=1e3?(v/1e3)+' rb':v;
+  charts.push(new Chart($('c1'),{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],datasets:[{data:CH.m,backgroundColor:g,borderRadius:8,borderSkipped:false}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>rp(c.parsed.y)}}},maintainAspectRatio:false,scales:{x:{grid:{display:false}},y:{ticks:{callback:sh},grid:{color:'#f1f5f9'}}}}}));
+  charts.push(new Chart($('c2'),{type:'doughnut',data:{labels:['Lunas','Belum'],datasets:[{data:[CH.l,CH.b],backgroundColor:['#10b981','#f97316'],borderWidth:0}]},options:{maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8}}}}}));
 }
 
 /* ===== Data Pelanggan (input sekali) ===== */
-function vPlg(){return `<div class="flex flex-wrap gap-2 mb-4 items-center"><input oninput="PG=1;F.q=this.value;tPlg()" value="${esc(F.q)}" placeholder="Cari nama / ID..." class="${IN} sm:w-64">${cabSel()}<button onclick="fPlg()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1"></i>Pelanggan</button></div><div id="tbl" class="glass rounded-2xl overflow-x-auto"></div>`}
+function vPlg(){return bar(`<input oninput="PG=1;F.q=this.value;tPlg()" value="${esc(F.q)}" placeholder="Cari nama / ID..." class="${IN} sm:w-64 flex-1 sm:flex-none">`,cabSel(),`<button onclick="fPlg()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Pelanggan</button>`)+`<div id="tbl" class="card overflow-hidden"></div>`}
 function tPlg(){
   const q=F.q.toLowerCase(),r=visP().filter(p=>(p.nama+p.id).toLowerCase().includes(q));
   $('tbl').innerHTML=table(['ID','Pelanggan','Cabang','Paket / Tarif','Diinput Oleh','Status',''],r.map(p=>[
-    `<span class="font-mono font-bold text-blue-700">${p.id}</span>`,`<b>${esc(p.nama)}</b><div class="text-slate-500">${esc(p.alamat)}</div>${p.keterangan?`<div class="text-[10px] italic text-slate-400">${esc(p.keterangan)}</div>`:''}`,esc(cabNama(p.cabangId)),`${esc(p.paket)}<div class="font-bold">${rp(p.tarif)}</div>`,
-    `${esc(p.diinputOleh?.nama)}<div class="text-[10px] text-slate-400">${esc(p.diinputOleh?.role)}</div>`,
-    `<span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.aktif!==false?'bg-emerald-100 text-emerald-700':'bg-slate-200 text-slate-600'}">${p.aktif!==false?'Aktif':'Nonaktif'}</span>`,
-    `<div class="whitespace-nowrap"><button onclick="fPlg('${p.id}')" class="text-blue-600 font-bold mr-2">Edit</button><button onclick="tglPlg('${p.id}')" class="text-orange-600 font-bold mr-2">${p.aktif!==false?'Nonaktifkan':'Aktifkan'}</button>${isA()?`<button onclick="delPlg('${p.id}')" class="text-red-600 font-bold">Hapus</button>`:''}</div>`]));
+    `<span class="font-mono font-bold text-blue-700">${p.id}</span>`,`<div><b>${esc(p.nama)}</b><div class="text-slate-500">${esc(p.alamat)}</div>${p.keterangan?`<div class="text-[10px] italic text-slate-400">${esc(p.keterangan)}</div>`:''}</div>`,esc(cabNama(p.cabangId)),`<div>${esc(p.paket)}<div class="font-bold">${rp(p.tarif)}</div></div>`,
+    `<div>${esc(p.diinputOleh?.nama)}<div class="text-[10px] text-slate-400">${esc(p.diinputOleh?.role)}</div></div>`,
+    p.aktif!==false?pill('Aktif','g'):pill('Nonaktif','s'),
+    `<div class="whitespace-nowrap flex gap-1.5 flex-wrap justify-end"><button onclick="fPlg('${p.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="tglPlg('${p.id}')" class="act-btn ab-o">${p.aktif!==false?'Nonaktifkan':'Aktifkan'}</button>${isA()?`<button onclick="delPlg('${p.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button>`:''}</div>`]));
 }
 function fPlg(id){
   const p=S.pelanggan.find(x=>x.id===id)||{};
@@ -244,10 +355,10 @@ function fPlg(id){
   ${fld('Nama',`<input id="f-nama" required class="${IN}" value="${esc(p.nama)}">`)}
   ${fld('Alamat',`<input id="f-alamat" required class="${IN}" value="${esc(p.alamat)}">`)}
   ${fld('Cabang',isA()?`<select id="f-cab" required class="${IN}"><option value="">- Pilih -</option>${S.cabang.map(c=>`<option value="${c.id}" ${p.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`:`<input readonly class="${IN} bg-slate-100" value="${esc(cabNama(me.cabangId))}">`)}
-  <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="f-paket" required class="${IN}" value="${esc(p.paket)}">`)}${fld('Tarif Bulanan',`<input id="f-tarif" type="number" min="0" required class="${IN}" value="${p.tarif??''}">`)}</div>
+  <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="f-paket" required class="${IN}" value="${esc(p.paket)}">`)}${fld('Tarif Bulanan',`<input id="f-tarif" type="number" inputmode="numeric" min="0" required class="${IN}" value="${p.tarif??''}">`)}</div>
   ${fld('Status',`<select id="f-aktif" class="${IN}"><option value="1">Aktif</option><option value="0" ${p.aktif===false?'selected':''}>Nonaktif</option></select>`)}
   ${fld('Keterangan',`<textarea id="f-ket" rows="2" placeholder="Contoh: Pelanggan lama, bayar tiap tanggal 5" class="${IN}">${esc(p.keterangan)}</textarea>`)}
-  <button class="${BT} w-full py-2.5">Simpan</button></form>`);
+  <button class="${BT} w-full py-3">Simpan</button></form>`);
 }
 async function sPlg(e){
   e.preventDefault();const old=S.pelanggan.find(x=>x.id===$('f-old').value);
@@ -261,22 +372,22 @@ async function delPlg(id){
 }
 
 /* ===== Input Pembayaran (tinggal isi nominal) ===== */
-function vByr(){return `<div class="flex flex-wrap gap-2 mb-3 items-center"><select onchange="PG=1;F.bln=this.value;tByr()" class="${IN} sm:w-52">${monthOpts(F.bln)}</select><input oninput="PG=1;F.q=this.value;tByr()" value="${esc(F.q)}" placeholder="Cari nama / ID..." class="${IN} sm:w-56">${cabSel()}<button onclick="fBayar()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1"></i>Tambah Pembayaran</button></div><div id="sum" class="text-xs font-semibold text-slate-600 mb-2"></div><div id="tbl" class="glass rounded-2xl overflow-x-auto"></div>`}
+function vByr(){return bar(`<select onchange="PG=1;F.bln=this.value;tByr()" class="${IN} sm:w-52">${monthOpts(F.bln)}</select>`,`<input oninput="PG=1;F.q=this.value;tByr()" value="${esc(F.q)}" placeholder="Cari nama / ID..." class="${IN} sm:w-56 flex-1 sm:flex-none">`,cabSel(),`<button onclick="fBayar()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Tambah Pembayaran</button>`)+`<div id="sum" class="flex gap-2 mb-3 text-xs font-bold"></div><div id="tbl" class="card overflow-hidden"></div>`}
 function tByr(){
   const q=F.q.toLowerCase(),T=Object.fromEntries(S.tagihan.filter(t=>t.bulan===F.bln).map(t=>[t.pelangganId,t]));
   const P=visP().filter(p=>p.aktif!==false&&(p.nama+p.id).toLowerCase().includes(q));
   const lunas=P.filter(p=>T[p.id]).length;
-  $('sum').innerHTML=`${bl(F.bln)}: <span class="text-emerald-600">${lunas} lunas</span> • <span class="text-orange-600">${P.length-lunas} belum</span>`;
+  $('sum').innerHTML=`<span class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600">${bl(F.bln)}</span><span class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>${lunas} lunas</span><span class="px-3 py-1.5 rounded-xl bg-orange-50 text-orange-700"><i class="fa-solid fa-clock mr-1"></i>${P.length-lunas} belum</span>`;
   $('tbl').innerHTML=table(['Pelanggan','Cabang','Tarif','Nominal Bayar','Status','Diinput / Dicatat Oleh',''],P.map(p=>{const t=T[p.id];return[
-    `<b>${esc(p.nama)}</b><div class="font-mono text-[10px] text-slate-500">${p.id}</div>`,esc(cabNama(p.cabangId)),rp(p.tarif),
-    t?`<b>${rp(t.nominalBayar)}</b>`:`<input id="n-${p.id}" type="number" min="1" value="${p.tarif}" class="w-28 py-1.5 px-2 border border-slate-200 rounded-lg text-xs">`,
-    `<span class="px-2 py-0.5 rounded text-[10px] font-bold ${t?'bg-emerald-100 text-emerald-700':'bg-orange-100 text-orange-700'}">${t?'Lunas':'Belum Bayar'}</span>`,
-    `${esc(p.diinputOleh?.nama)}<div class="text-[10px] text-slate-400">${t?'Dicatat: '+esc(t.dibayarOleh?.nama):'-'}</div>${t&&t.catatan?`<div class="text-[10px] italic text-slate-500">Ket: ${esc(t.catatan)}</div>`:''}`,
-    t?`<div class="whitespace-nowrap"><button onclick="kw('${t.id}')" class="text-blue-600 font-bold mr-2">Kwitansi</button><button onclick="batal('${t.id}')" class="text-red-600 font-bold">Batalkan</button></div>`:`<button onclick="bayar('${p.id}')" class="${BT}">Bayar</button>`]}));
+    `<div><b>${esc(p.nama)}</b><div class="font-mono text-[10px] text-slate-500">${p.id}</div></div>`,esc(cabNama(p.cabangId)),rp(p.tarif),
+    t?`<b>${rp(t.nominalBayar)}</b>`:`<input id="n-${p.id}" type="number" inputmode="numeric" min="1" value="${p.tarif}" class="w-28 py-1.5 px-2 border border-slate-200 rounded-lg text-right">`,
+    t?pill('<i class="fa-solid fa-check"></i> Lunas','g'):pill('Belum Bayar','o'),
+    `<div>${esc(p.diinputOleh?.nama)}<div class="text-[10px] text-slate-400">${t?'Dicatat: '+esc(t.dibayarOleh?.nama):'-'}</div>${t&&t.catatan?`<div class="text-[10px] italic text-slate-500">Ket: ${esc(t.catatan)}</div>`:''}</div>`,
+    t?`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="kw('${t.id}')" class="act-btn ab-b"><i class="fa-solid fa-receipt"></i>Kwitansi</button><button onclick="batal('${t.id}')" class="act-btn ab-r">Batalkan</button></div>`:`<button onclick="bayar('${p.id}')" class="${BT}"><i class="fa-solid fa-check mr-1.5"></i>Bayar</button>`]}));
 }
 const mkTg=(p,bln,n,ket)=>({id:p.id+'_'+bln,pelangganId:p.id,nama:p.nama,alamat:p.alamat,cabangId:p.cabangId,bulan:bln,nominalBayar:n,status:'Lunas',tglBayar:new Date().toISOString(),diinputOleh:p.diinputOleh,dibayarOleh:who(),catatan:ket||''});
 function fBayar(){
-  const P=visP().filter(p=>p.aktif!==false),rd=(v,l,c)=>`<label class="flex items-center gap-2 p-2.5 border border-slate-200 rounded-xl cursor-pointer text-xs font-bold"><input type="radio" name="md" value="${v}" ${c?'checked':''} onchange="mdB()">${l}</label>`;
+  const P=visP().filter(p=>p.aktif!==false),rd=(v,l,c)=>`<label class="flex items-center gap-2 p-3 border border-slate-200 rounded-xl cursor-pointer text-xs font-bold has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50"><input type="radio" name="md" value="${v}" ${c?'checked':''} onchange="mdB()">${l}</label>`;
   modal('Tambah Pembayaran',`<form onsubmit="sBayar(event)" class="space-y-3">
   <div class="grid grid-cols-2 gap-2">${rd('lama','Pelanggan Lama',1)}${rd('baru','Pelanggan Baru',0)}</div>
   ${fld('Bulan Tagihan',`<select id="b-bln" class="${IN}">${monthOpts(F.bln)}</select>`)}
@@ -284,12 +395,12 @@ function fBayar(){
   <div id="b-baru" class="hidden space-y-3">
     ${fld('Nama Pelanggan',`<input id="b-nama" class="${IN}">`)}${fld('Alamat',`<input id="b-alamat" class="${IN}">`)}
     ${fld('Cabang',isA()?`<select id="b-cab" class="${IN}"><option value="">- Pilih -</option>${S.cabang.map(c=>`<option value="${c.id}">${esc(c.nama)}</option>`).join('')}</select>`:`<input readonly class="${IN} bg-slate-100" value="${esc(cabNama(me.cabangId))}">`)}
-    <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="b-paket" class="${IN}">`)}${fld('Tarif Bulanan',`<input id="b-tarif" type="number" min="0" oninput="$('b-nom').value=this.value" class="${IN}">`)}</div>
+    <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="b-paket" class="${IN}">`)}${fld('Tarif Bulanan',`<input id="b-tarif" type="number" inputmode="numeric" min="0" oninput="$('b-nom').value=this.value" class="${IN}">`)}</div>
     ${fld('Keterangan Pelanggan',`<input id="b-pket" placeholder="Opsional" class="${IN}">`)}
   </div>
-  ${fld('Nominal Bayar',`<input id="b-nom" type="number" min="1" required class="${IN}">`)}
+  ${fld('Nominal Bayar',`<input id="b-nom" type="number" inputmode="numeric" min="1" required class="${IN}">`)}
   ${fld('Keterangan Pembayaran',`<textarea id="b-ket" rows="2" placeholder="Contoh: Dibayar tunai / transfer, titip tetangga" class="${IN}"></textarea>`)}
-  <button class="${BT} w-full py-2.5">Simpan Pembayaran</button></form>`);
+  <button class="${BT} w-full py-3">Simpan Pembayaran</button></form>`);
 }
 function mdB(){const b=document.querySelector('input[name=md]:checked').value==='baru';$('b-lama').classList.toggle('hidden',b);$('b-baru').classList.toggle('hidden',!b)}
 function pilPlg(){const o=$('b-plg').selectedOptions[0];$('b-nom').value=o&&o.dataset.t?o.dataset.t:''}
@@ -318,29 +429,34 @@ async function bayar(pid){
 async function batal(id){if(confirm('Batalkan pembayaran ini?')&&await safe(()=>DB.del('tagihan',id))){toast('Pembayaran dibatalkan');tByr()}}
 function rcHTML(t){
   const r=(a,b)=>`<tr><td style="padding:3px 0;color:#64748b">${a}</td><td style="text-align:right;font-weight:600">${b}</td></tr>`;
-  return `<div style="font-family:sans-serif;max-width:420px;margin:auto;border:2px solid #1e293b;padding:16px"><h2 style="text-align:center;margin:0">${esc(brand())}</h2><p style="text-align:center;font-size:12px;margin:2px 0 8px">KWITANSI PEMBAYARAN INTERNET</p><hr><table style="width:100%;font-size:13px">${r('ID Pelanggan',t.pelangganId)}${r('Nama',esc(t.nama))}${r('Alamat',esc(t.alamat))}${r('Cabang',esc(cabNama(t.cabangId)))}${r('Periode',bl(t.bulan))}${r('Tgl Bayar',new Date(t.tglBayar).toLocaleDateString('id-ID'))}${r('Diinput Oleh',esc(t.diinputOleh?.nama))}${r('Dicatat Oleh',esc(t.dibayarOleh?.nama))}${t.catatan?r('Keterangan',esc(t.catatan)):''}</table><hr><div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800"><span>TOTAL</span><span>${rp(t.nominalBayar)}</span></div><p style="text-align:center;font-size:12px;margin-top:10px">LUNAS - Terima kasih</p></div>`;
+  return `<div style="font-family:sans-serif;max-width:420px;margin:auto;border:2px solid #1e293b;padding:16px;border-radius:12px;background:#fff"><h2 style="text-align:center;margin:0">${esc(brand())}</h2><p style="text-align:center;font-size:12px;margin:2px 0 8px">KWITANSI PEMBAYARAN INTERNET</p><hr><table style="width:100%;font-size:13px">${r('ID Pelanggan',t.pelangganId)}${r('Nama',esc(t.nama))}${r('Alamat',esc(t.alamat))}${r('Cabang',esc(cabNama(t.cabangId)))}${r('Periode',bl(t.bulan))}${r('Tgl Bayar',new Date(t.tglBayar).toLocaleDateString('id-ID'))}${r('Diinput Oleh',esc(t.diinputOleh?.nama))}${r('Dicatat Oleh',esc(t.dibayarOleh?.nama))}${t.catatan?r('Keterangan',esc(t.catatan)):''}</table><hr><div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800"><span>TOTAL</span><span>${rp(t.nominalBayar)}</span></div><p style="text-align:center;font-size:12px;margin-top:10px">LUNAS - Terima kasih</p></div>`;
 }
-function kw(id){const t=S.tagihan.find(x=>x.id===id);modal('Kwitansi',`<div id="rc">${rcHTML(t)}</div><button onclick="printHTML($('rc').innerHTML)" class="${BT} w-full py-2.5 mt-3"><i class="fa-solid fa-print mr-1"></i>Cetak</button>`)}
+function kw(id){const t=S.tagihan.find(x=>x.id===id);modal('Kwitansi',`<div id="rc">${rcHTML(t)}</div><button onclick="printHTML($('rc').innerHTML)" class="${BT} w-full py-3 mt-3"><i class="fa-solid fa-print mr-1.5"></i>Cetak</button>`)}
 
 /* ===== Laporan ===== */
 function repRows(){
   const T=Object.fromEntries(S.tagihan.filter(t=>t.bulan===F.bln).map(t=>[t.pelangganId,t]));
   return visP().filter(p=>p.aktif!==false||T[p.id]).map(p=>{const t=T[p.id];return{'ID':p.id,'Nama':p.nama,'Cabang':cabNama(p.cabangId),'Status':t?'Lunas':'Belum Bayar','Nominal':t?t.nominalBayar:0,'Tgl Bayar':t?new Date(t.tglBayar).toLocaleDateString('id-ID'):'-','Diinput Oleh':p.diinputOleh?.nama||'-','Dicatat Oleh':t?.dibayarOleh?.nama||'-','Keterangan':(t&&t.catatan)||p.keterangan||''}});
 }
-function vLap(){return `<div class="flex flex-wrap gap-2 mb-3 items-center"><select onchange="PG=1;F.bln=this.value;tLap()" class="${IN} sm:w-52">${monthOpts(F.bln)}</select>${cabSel()}<div class="ml-auto flex gap-2"><button onclick="xls()" class="${BT} !bg-emerald-600"><i class="fa-solid fa-file-excel mr-1"></i>Excel</button><button onclick="cetakLap()" class="${BT} !bg-slate-700"><i class="fa-solid fa-print mr-1"></i>Cetak</button></div></div><div id="sum" class="grid grid-cols-3 gap-3 mb-3"></div><div id="tbl" class="glass rounded-2xl overflow-x-auto"></div>`}
+function vLap(){return bar(`<select onchange="PG=1;F.bln=this.value;tLap()" class="${IN} sm:w-52">${monthOpts(F.bln)}</select>`,cabSel(),`<div class="ml-auto flex gap-2"><button onclick="xls()" class="${BT} !from-emerald-600 !to-emerald-500 !shadow-emerald-600/25"><i class="fa-solid fa-file-excel mr-1.5"></i>Excel</button><button onclick="cetakLap()" class="${BT} !from-slate-700 !to-slate-800 !shadow-slate-700/25"><i class="fa-solid fa-print mr-1.5"></i>Cetak</button></div>`)+`<div id="sum" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3"></div><div id="tbl" class="card overflow-hidden"></div>`}
 function lapTable(r,all){return table(['ID','Nama','Cabang','Status','Nominal','Tgl Bayar','Diinput Oleh','Dicatat Oleh','Keterangan'],r.map(x=>[x.ID,esc(x.Nama),esc(x.Cabang),`<b class="${x.Status==='Lunas'?'text-emerald-600':'text-orange-600'}">${x.Status}</b>`,rp(x.Nominal),x['Tgl Bayar'],esc(x['Diinput Oleh']),esc(x['Dicatat Oleh']),esc(x.Keterangan)]),all)}
 function tLap(){
   const r=repRows(),tot=r.reduce((a,x)=>a+x.Nominal,0),l=r.filter(x=>x.Status==='Lunas').length;
-  $('sum').innerHTML=card('Pelanggan',r.length,'fa-users','bg-blue-600')+card('Lunas / Belum',l+' / '+(r.length-l),'fa-list-check','bg-orange-500')+card('Total Masuk',rp(tot),'fa-wallet','bg-emerald-500');
+  $('sum').innerHTML=card('Pelanggan',r.length,'fa-users','bg-gradient-to-tr from-blue-600 to-sky-500')+card('Lunas / Belum',l+' / '+(r.length-l),'fa-list-check','bg-gradient-to-tr from-orange-500 to-amber-400')+card('Total Masuk',rp(tot),'fa-wallet','bg-gradient-to-tr from-emerald-600 to-emerald-400');
   $('tbl').innerHTML=lapTable(r);
 }
 function xls(){const r=repRows();if(!r.length)return toast('Tidak ada data','e');const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(r),'Laporan');XLSX.writeFile(wb,'Laporan_Tagihan_'+F.bln+'.xlsx');toast('Excel diunduh')}
-function cetakLap(){const r=repRows(),tot=r.reduce((a,x)=>a+x.Nominal,0);printHTML(`<div style="font-family:sans-serif;font-size:11px"><h2 style="margin:0">${esc(brand())} - Laporan ${bl(F.bln)}</h2><p>Cabang: ${F.cab?esc(cabNama(F.cab)):'Semua'} • Dicetak oleh ${esc(me.nama)} • ${new Date().toLocaleString('id-ID')}</p>${lapTable(r,1).replace(/<table/,'<table border="1" style="border-collapse:collapse;width:100%"')}<h3>Total Pemasukan: ${rp(tot)}</h3></div>`)}
+function cetakLap(){
+  const r=repRows(),tot=r.reduce((a,x)=>a+x.Nominal,0);
+  const rows=r.map(x=>`<tr>${[x.ID,esc(x.Nama),esc(x.Cabang),x.Status,rp(x.Nominal),x['Tgl Bayar'],esc(x['Diinput Oleh']),esc(x['Dicatat Oleh']),esc(x.Keterangan)].map(c=>`<td style="border:1px solid #999;padding:4px">${c}</td>`).join('')}</tr>`).join('');
+  const head=['ID','Nama','Cabang','Status','Nominal','Tgl Bayar','Diinput Oleh','Dicatat Oleh','Keterangan'].map(c=>`<th style="border:1px solid #999;padding:4px;background:#eee;text-align:left">${c}</th>`).join('');
+  printHTML(`<div style="font-family:sans-serif;font-size:11px"><h2 style="margin:0">${esc(brand())} - Laporan ${bl(F.bln)}</h2><p>Cabang: ${F.cab?esc(cabNama(F.cab)):'Semua'} • Dicetak oleh ${esc(me.nama)} • ${new Date().toLocaleString('id-ID')}</p><table style="border-collapse:collapse;width:100%"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table><h3>Total Pemasukan: ${rp(tot)}</h3></div>`);
+}
 
 /* ===== Manajemen Cabang (Admin) ===== */
-function vCab(){return `<div class="flex mb-4"><button onclick="fCab()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1"></i>Cabang</button></div><div id="tbl" class="glass rounded-2xl overflow-x-auto"></div>`}
-function tCab(){$('tbl').innerHTML=table(['ID','Kode','Nama Cabang','Alamat','Pelanggan','Petugas',''],S.cabang.map(c=>[`<span class="font-mono font-bold">${c.id}</span>`,esc(c.kode),`<b>${esc(c.nama)}</b>`,esc(c.alamat),S.pelanggan.filter(p=>p.cabangId===c.id).length,S.users.filter(u=>u.cabangId===c.id).length,`<button onclick="fCab('${c.id}')" class="text-blue-600 font-bold mr-2">Edit</button><button onclick="delCab('${c.id}')" class="text-red-600 font-bold">Hapus</button>`]))}
-function fCab(id){const c=S.cabang.find(x=>x.id===id)||{};modal(id?'Edit Cabang':'Tambah Cabang',`<form onsubmit="sCab(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama Cabang',`<input id="f-nama" required class="${IN}" value="${esc(c.nama)}">`)}${fld('Kode',`<input id="f-kode" required maxlength="6" class="${IN}" value="${esc(c.kode)}">`)}${fld('Alamat',`<input id="f-alamat" class="${IN}" value="${esc(c.alamat)}">`)}<button class="${BT} w-full py-2.5">Simpan</button></form>`)}
+function vCab(){return `<div class="flex mb-4"><button onclick="fCab()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Cabang</button></div><div id="tbl" class="card overflow-hidden"></div>`}
+function tCab(){$('tbl').innerHTML=table(['ID','Kode','Nama Cabang','Alamat','Pelanggan','Petugas',''],S.cabang.map(c=>[`<span class="font-mono font-bold">${c.id}</span>`,esc(c.kode),`<b>${esc(c.nama)}</b>`,esc(c.alamat),S.pelanggan.filter(p=>p.cabangId===c.id).length,S.users.filter(u=>u.cabangId===c.id).length,`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="fCab('${c.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="delCab('${c.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button></div>`]))}
+function fCab(id){const c=S.cabang.find(x=>x.id===id)||{};modal(id?'Edit Cabang':'Tambah Cabang',`<form onsubmit="sCab(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama Cabang',`<input id="f-nama" required class="${IN}" value="${esc(c.nama)}">`)}${fld('Kode',`<input id="f-kode" required maxlength="6" class="${IN}" value="${esc(c.kode)}">`)}${fld('Alamat',`<input id="f-alamat" class="${IN}" value="${esc(c.alamat)}">`)}<button class="${BT} w-full py-3">Simpan</button></form>`)}
 async function sCab(e){
   e.preventDefault();const old=$('f-old').value,n=Math.max(0,...S.cabang.map(c=>+c.id.split('-')[1]||0))+1;
   const o={id:old||'CBG-'+String(n).padStart(3,'0'),nama:$('f-nama').value.trim(),kode:$('f-kode').value.trim().toUpperCase(),alamat:$('f-alamat').value.trim()};
@@ -352,11 +468,11 @@ async function delCab(id){
 }
 
 /* ===== Manajemen User Petugas (Admin) ===== */
-function vUsr(){return `<div class="flex mb-4"><button onclick="fUsr()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1"></i>Petugas</button></div><div id="tbl" class="glass rounded-2xl overflow-x-auto"></div>`}
-function tUsr(){$('tbl').innerHTML=table(['ID','Nama','Username','Cabang','Status',''],S.users.map(u=>[`<span class="font-mono font-bold">${u.id}</span>`,`<b>${esc(u.nama)}</b>`,esc(u.username),esc(cabNama(u.cabangId)),`<span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.aktif!==false?'bg-emerald-100 text-emerald-700':'bg-slate-200 text-slate-600'}">${u.aktif!==false?'Aktif':'Nonaktif'}</span>`,`<button onclick="fUsr('${u.id}')" class="text-blue-600 font-bold mr-2">Edit</button><button onclick="delUsr('${u.id}')" class="text-red-600 font-bold">Hapus</button>`]))}
+function vUsr(){return `<div class="flex mb-4"><button onclick="fUsr()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Petugas</button></div><div id="tbl" class="card overflow-hidden"></div>`}
+function tUsr(){$('tbl').innerHTML=table(['ID','Nama','Username','Cabang','Status',''],S.users.map(u=>[`<span class="font-mono font-bold">${u.id}</span>`,`<b>${esc(u.nama)}</b>`,esc(u.username),esc(cabNama(u.cabangId)),u.aktif!==false?pill('Aktif','g'):pill('Nonaktif','s'),`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="fUsr('${u.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="delUsr('${u.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button></div>`]))}
 function fUsr(id){
   const u=S.users.find(x=>x.id===id)||{};
-  modal(id?'Edit Petugas':'Tambah Petugas',`<form onsubmit="sUsr(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama',`<input id="f-nama" required class="${IN}" value="${esc(u.nama)}">`)}${fld('Username',`<input id="f-user" required class="${IN}" value="${esc(u.username)}">`)}${fld('Password'+(id?' (kosongkan jika tidak diubah)':''),`<input id="f-pass" type="password" ${id?'':'required'} minlength="6" class="${IN}">`)}${fld('Cabang',`<select id="f-cab" required class="${IN}"><option value="">- Pilih -</option>${S.cabang.map(c=>`<option value="${c.id}" ${u.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`)}${fld('Status',`<select id="f-aktif" class="${IN}"><option value="1">Aktif</option><option value="0" ${u.aktif===false?'selected':''}>Nonaktif</option></select>`)}<button class="${BT} w-full py-2.5">Simpan</button></form>`);
+  modal(id?'Edit Petugas':'Tambah Petugas',`<form onsubmit="sUsr(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama',`<input id="f-nama" required class="${IN}" value="${esc(u.nama)}">`)}${fld('Username',`<input id="f-user" required autocapitalize="none" class="${IN}" value="${esc(u.username)}">`)}${fld('Password'+(id?' (kosongkan jika tidak diubah)':''),`<input id="f-pass" type="password" ${id?'':'required'} minlength="6" class="${IN}">`)}${fld('Cabang',`<select id="f-cab" required class="${IN}"><option value="">- Pilih -</option>${S.cabang.map(c=>`<option value="${c.id}" ${u.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`)}${fld('Status',`<select id="f-aktif" class="${IN}"><option value="1">Aktif</option><option value="0" ${u.aktif===false?'selected':''}>Nonaktif</option></select>`)}<button class="${BT} w-full py-3">Simpan</button></form>`);
 }
 async function sUsr(e){
   e.preventDefault();const old=S.users.find(x=>x.id===$('f-old').value),un=$('f-user').value.trim();
@@ -369,11 +485,17 @@ async function sUsr(e){
 async function delUsr(id){if(confirm('Hapus petugas ini? Data yang pernah ia input tetap tersimpan.')&&await safe(()=>DB.del('users',id))){toast('Petugas dihapus');tUsr()}}
 
 /* ===== Pengaturan (Admin) ===== */
-function vSet(){return `<form onsubmit="sSet(event)" class="glass rounded-2xl p-5 max-w-md space-y-3">${fld('Nama Aplikasi',`<input id="f-app" required class="${IN}" value="${esc(brand())}">`)}<button class="${BT} py-2.5">Simpan</button><p class="text-[11px] text-slate-500">Mode: ${IS_PREVIEW?'Preview (data sementara di memori)':'Terhubung ke Firebase'}</p></form>`}
+function setSub(s){ST=s;PG=1;render()}
+function vSet(){
+  const tb=[['umum','Umum','fa-sliders'],['cabang','Cabang','fa-building'],['user','Petugas','fa-user-gear']];
+  return `<div class="flex gap-1 p-1 bg-white/80 border border-slate-200 rounded-2xl mb-4 w-full sm:w-fit">${tb.map(x=>`<button onclick="setSub('${x[0]}')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${ST===x[0]?'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25':'text-slate-600 hover:bg-slate-100'}"><i class="fa-solid ${x[2]}"></i>${x[1]}</button>`).join('')}</div>`+({umum:vUmum,cabang:vCab,user:vUsr})[ST]();
+}
+function vUmum(){return `<form onsubmit="sSet(event)" class="card p-5 max-w-md space-y-3">${fld('Nama Aplikasi',`<input id="f-app" required class="${IN}" value="${esc(brand())}">`)}<button class="${BT} py-3 px-6">Simpan</button><p class="text-[11px] text-slate-500">Mode: ${IS_PREVIEW?'Preview (data sementara di memori)':'Terhubung ke Firebase'}</p></form>`}
 async function sSet(e){e.preventDefault();if(await safe(()=>DB.put('settings',{id:'app',namaAplikasi:$('f-app').value.trim()}))){applyBrand();toast('Pengaturan disimpan')}}
 
 /* ===== Boot ===== */
 (async()=>{
+  netChk();
   try{await initBackend();if(IS_PREVIEW)await autoSetupDatabase()}
   catch(e){$('le').textContent='Gagal inisialisasi Firebase: '+(e.message||e);$('le').classList.remove('hidden')}
 })();
