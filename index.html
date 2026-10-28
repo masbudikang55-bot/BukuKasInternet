@@ -191,7 +191,13 @@ const isA=()=>me&&me.role==='Admin';
 const cabNama=id=>(S.cabang.find(c=>c.id===id)||{}).nama||'-';
 const brand=()=>(S.settings.find(s=>s.id==='app')||{}).namaAplikasi||'BUKU KAS';
 const who=()=>({uid:me.uid,nama:me.nama,role:me.role,cabangId:me.cabangId||''});
-const canSee=x=>isA()||(x.diinputOleh&&x.diinputOleh.uid===me.uid);
+/* Satu akun petugas boleh memegang banyak cabang (cabangIds); data lama (cabangId tunggal) tetap terbaca */
+const ucabs=u=>u.cabangIds&&u.cabangIds.length?u.cabangIds:(u.cabangId?[u.cabangId]:[]);
+const myCabs=()=>isA()?S.cabang.map(c=>c.id):me.cabangIds||[];
+const cabLbl=()=>me.cabangIds&&me.cabangIds.length?me.cabangIds.map(cabNama).join(', '):'';
+/* Petugas melihat: data buatannya sendiri + data buatan Admin di cabangnya */
+const canSee=x=>isA()||(x.diinputOleh&&(x.diinputOleh.uid===me.uid||(x.diinputOleh.role==='Admin'&&me.cabangIds.includes(x.cabangId))));
+const canEditP=p=>isA()||(p.diinputOleh&&p.diinputOleh.uid===me.uid);
 const visP=()=>S.pelanggan.filter(canSee).filter(p=>!F.cab||p.cabangId===F.cab);
 const visT=()=>S.tagihan.filter(canSee).filter(t=>!F.cab||t.cabangId===F.cab);
 const uid6=()=>Date.now().toString(36).toUpperCase().slice(-6);
@@ -228,13 +234,25 @@ async function initBackend(){
 const DB={
   async all(c){const s=await FB.getDocs(FB.collection(FB.db,c));return s.docs.map(d=>({...d.data(),id:d.id}))},
   async mine(c){const s=await FB.getDocs(FB.query(FB.collection(FB.db,c),FB.where('diinputOleh.uid','==',me.uid)));return s.docs.map(d=>({...d.data(),id:d.id}))},
+  async byAdminCab(c){if(!me.cabangIds.length)return[];const s=await FB.getDocs(FB.query(FB.collection(FB.db,c),FB.where('diinputOleh.role','==','Admin'),FB.where('cabangId','in',me.cabangIds.slice(0,30))));return s.docs.map(d=>({...d.data(),id:d.id}))},
+  async byCab(c){const s=await FB.getDocs(FB.query(FB.collection(FB.db,c),FB.where('cabangId','in',me.cabangIds.slice(0,30))));return s.docs.map(d=>({...d.data(),id:d.id}))},
   async put(c,o){const{id,...d}=o;if(!IS_PREVIEW)await FB.setDoc(FB.doc(FB.db,c,id),d);const i=S[c].findIndex(x=>x.id===id);i<0?S[c].push(o):S[c][i]=o},
   async del(c,id){if(!IS_PREVIEW)await FB.deleteDoc(FB.doc(FB.db,c,id));S[c]=S[c].filter(x=>x.id!==id)},
   async load(){
     if(IS_PREVIEW)return;
     S.cabang=await DB.all('cabang');S.settings=await DB.all('settings');
     if(isA()){for(const c of['users','pelanggan','tagihan'])S[c]=await DB.all(c)}
-    else{S.users=[];S.pelanggan=await DB.mine('pelanggan');S.tagihan=await DB.mine('tagihan')}
+    else{
+      S.users=[];
+      /* Pelanggan: buatan petugas sendiri + buatan Admin di cabang petugas */
+      const own=await DB.mine('pelanggan');
+      const adm=await DB.byAdminCab('pelanggan');
+      const mp=new Map();[...adm,...own].forEach(x=>mp.set(x.id,x));S.pelanggan=[...mp.values()];
+      /* Tagihan: seluruh tagihan di cabang petugas (status lunas pelanggan buatan Admin ikut terbaca) */
+      const ownT=await DB.mine('tagihan');
+      const cabT=me.cabangIds.length?await DB.byCab('tagihan'):[];
+      const mt=new Map();[...cabT,...ownT].forEach(x=>mt.set(x.id,x));S.tagihan=[...mt.values()];
+    }
   }
 };
 
@@ -245,7 +263,7 @@ async function autoSetupDatabase(){
   const adm={uid:me?me.uid:'ADMIN-1',nama:me?me.nama:'Administrator',role:'Admin',cabangId:''};
   const h=await sha('petugas123');
   const cab=[{id:'CBG-001',nama:'Cabang Pusat',kode:'PST',alamat:'Jl. Merdeka No. 1'},{id:'CBG-002',nama:'Cabang Timur',kode:'TMR',alamat:'Jl. Timur Raya No. 8'}];
-  const usr=[{id:'USR-001',nama:'Budi Petugas',username:'petugas1',passwordHash:h,role:'Petugas',cabangId:'CBG-001',aktif:true},{id:'USR-002',nama:'Sari Petugas',username:'petugas2',passwordHash:h,role:'Petugas',cabangId:'CBG-002',aktif:true}];
+  const usr=[{id:'USR-001',nama:'Budi Petugas',username:'petugas1',passwordHash:h,role:'Petugas',cabangId:'CBG-001',cabangIds:['CBG-001','CBG-002'],aktif:true},{id:'USR-002',nama:'Sari Petugas',username:'petugas2',passwordHash:h,role:'Petugas',cabangId:'CBG-002',aktif:true}];
   const o1={uid:'USR-001',nama:'Budi Petugas',role:'Petugas',cabangId:'CBG-001'},o2={uid:'USR-002',nama:'Sari Petugas',role:'Petugas',cabangId:'CBG-002'};
   const now=new Date().toISOString();
   const plg=[
@@ -268,13 +286,13 @@ async function doLogin(e){
   const reset=()=>{b.disabled=false;b.textContent='Masuk'};
   try{
     if(u.includes('@')){
-      if(IS_PREVIEW){if(u==='admin@bukukas.com'&&p==='admin123')me={uid:'ADMIN-1',nama:'Administrator',role:'Admin',cabangId:''};else throw 0}
-      else{const r=await FB.signInWithEmailAndPassword(FB.auth,u,p);me={uid:r.user.uid,nama:r.user.displayName||u.split('@')[0],role:'Admin',cabangId:''}}
+      if(IS_PREVIEW){if(u==='admin@bukukas.com'&&p==='admin123')me={uid:'ADMIN-1',nama:'Administrator',role:'Admin',cabangId:'',cabangIds:[]};else throw 0}
+      else{const r=await FB.signInWithEmailAndPassword(FB.auth,u,p);me={uid:r.user.uid,nama:r.user.displayName||u.split('@')[0],role:'Admin',cabangId:'',cabangIds:[]}}
     }else{
       let list=S.users;
       if(!IS_PREVIEW){const s=await FB.getDocs(FB.query(FB.collection(FB.db,'users'),FB.where('username','==',u)));list=s.docs.map(d=>({...d.data(),id:d.id}))}
       const h=await sha(p),x=list.find(z=>z.username===u&&z.passwordHash===h&&z.aktif!==false);
-      if(!x)throw 0;me={uid:x.id,nama:x.nama,role:'Petugas',cabangId:x.cabangId};
+      if(!x)throw 0;const cs=ucabs(x);me={uid:x.id,nama:x.nama,role:'Petugas',cabangId:cs[0]||'',cabangIds:cs};
     }
   }catch(err){$('le').textContent='Login gagal. Periksa kembali akun Anda.';$('le').classList.remove('hidden');reset();return}
   try{
@@ -285,8 +303,8 @@ async function doLogin(e){
 }
 function startApp(){
   $('login').classList.add('hidden');$('app').classList.remove('hidden');
-  $('u-nama').textContent=me.nama;$('u-av').textContent=ini(me.nama);$('u-info').textContent=me.role+(me.cabangId?' • '+cabNama(me.cabangId):' • Semua Cabang');
-  $('sub').textContent=me.nama+' ('+me.role+')'+(me.cabangId?' • '+cabNama(me.cabangId):'');
+  $('u-nama').textContent=me.nama;$('u-av').textContent=ini(me.nama);$('u-info').textContent=me.role+(me.cabangIds.length?' • '+cabLbl():' • Semua Cabang');
+  $('sub').textContent=me.nama+' ('+me.role+')'+(me.cabangIds.length?' • '+cabLbl():'');
   applyBrand();buildNav();go('dashboard');
 }
 function applyBrand(){$('brand').textContent=brand();$('brand-login').textContent=brand()}
@@ -346,7 +364,7 @@ function tPlg(){
     `<span class="font-mono font-bold text-blue-700">${p.id}</span>`,`<div><b>${esc(p.nama)}</b><div class="text-slate-500 text-[11px]"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i>${esc(p.alamat)}</div>${p.keterangan?`<div class="text-[10px] italic text-slate-400">${esc(p.keterangan)}</div>`:''}</div>`,esc(cabNama(p.cabangId)),`<div>${esc(p.paket)}<div class="font-bold">${rp(p.tarif)}</div></div>`,
     `<div>${esc(p.diinputOleh?.nama)}<div class="text-[10px] text-slate-400">${esc(p.diinputOleh?.role)}</div></div>`,
     p.aktif!==false?pill('Aktif','g'):pill('Nonaktif','s'),
-    `<div class="whitespace-nowrap flex gap-1.5 flex-wrap justify-end"><button onclick="fPlg('${p.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="tglPlg('${p.id}')" class="act-btn ab-o">${p.aktif!==false?'Nonaktifkan':'Aktifkan'}</button>${isA()?`<button onclick="delPlg('${p.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button>`:''}</div>`]));
+    `<div class="whitespace-nowrap flex gap-1.5 flex-wrap justify-end">${canEditP(p)?`<button onclick="fPlg('${p.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="tglPlg('${p.id}')" class="act-btn ab-o">${p.aktif!==false?'Nonaktifkan':'Aktifkan'}</button>`:`<span class="text-[10px] text-slate-400"><i class="fa-solid fa-lock mr-1"></i>Data Admin</span>`}${isA()?`<button onclick="delPlg('${p.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button>`:''}</div>`]));
 }
 function fPlg(id){
   const p=S.pelanggan.find(x=>x.id===id)||{};
@@ -354,7 +372,7 @@ function fPlg(id){
   ${fld('ID Pelanggan',`<input id="f-id" readonly class="${IN} bg-slate-100 font-mono" value="${p.id||'PLG-'+uid6()}">`)}
   ${fld('Nama Pelanggan',`<input id="f-nama" required placeholder="Nama Lengkap" class="${IN}" value="${esc(p.nama)}">`)}
   ${fld('Alamat Lengkap',`<textarea id="f-alamat" required placeholder="Jl. Contoh No. 12, RT 01/02" rows="2" class="${IN}">${esc(p.alamat)}</textarea>`)}
-  ${fld('Cabang',isA()?`<select id="f-cab" required class="${IN}"><option value="">- Pilih Cabang -</option>${S.cabang.map(c=>`<option value="${c.id}" ${p.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`:`<input readonly class="${IN} bg-slate-100" value="${esc(cabNama(me.cabangId))}">`)}
+  ${fld('Cabang',isA()?`<select id="f-cab" required class="${IN}"><option value="">- Pilih Cabang -</option>${S.cabang.map(c=>`<option value="${c.id}" ${p.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`:`<select id="f-cab" required class="${IN}">${me.cabangIds.map(c=>`<option value="${c}" ${(p.cabangId||me.cabangId)===c?'selected':''}>${esc(cabNama(c))}</option>`).join('')}</select>`)}
   <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="f-paket" required placeholder="Home 20 Mbps" class="${IN}" value="${esc(p.paket)}">`)}${fld('Tarif Bulanan (Rp)',`<input id="f-tarif" type="number" inputmode="numeric" min="0" required class="${IN}" value="${p.tarif??''}">`)}</div>
   ${fld('Status',`<select id="f-aktif" class="${IN}"><option value="1">Aktif</option><option value="0" ${p.aktif===false?'selected':''}>Nonaktif</option></select>`)}
   ${fld('Keterangan',`<textarea id="f-ket" rows="2" placeholder="Contoh: Pelanggan lama, bayar tiap tanggal 5" class="${IN}">${esc(p.keterangan)}</textarea>`)}
@@ -362,7 +380,7 @@ function fPlg(id){
 }
 async function sPlg(e){
   e.preventDefault();const old=S.pelanggan.find(x=>x.id===$('f-old').value);
-  const o={id:$('f-id').value,nama:$('f-nama').value.trim(),alamat:$('f-alamat').value.trim(),paket:$('f-paket').value.trim(),tarif:Number($('f-tarif').value)||0,cabangId:isA()?$('f-cab').value:me.cabangId,aktif:$('f-aktif').value==='1',keterangan:$('f-ket').value.trim(),diinputOleh:old?old.diinputOleh:who(),createdAt:old?old.createdAt:new Date().toISOString()};
+  const o={id:$('f-id').value,nama:$('f-nama').value.trim(),alamat:$('f-alamat').value.trim(),paket:$('f-paket').value.trim(),tarif:Number($('f-tarif').value)||0,cabangId:$('f-cab').value,aktif:$('f-aktif').value==='1',keterangan:$('f-ket').value.trim(),diinputOleh:old?old.diinputOleh:who(),createdAt:old?old.createdAt:new Date().toISOString()};
   if(!o.alamat)return toast('Alamat wajib diisi','e');
   if(await safe(()=>DB.put('pelanggan',o))){closeModal();toast('Pelanggan tersimpan');render()}
 }
@@ -381,39 +399,51 @@ function tByr(){
   $('sum').innerHTML=`<span class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600">${bl(F.bln)}</span><span class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>${lunas} lunas</span><span class="px-3 py-1.5 rounded-xl bg-orange-50 text-orange-700"><i class="fa-solid fa-clock mr-1"></i>${P.length-lunas} belum</span>`;
   $('tbl').innerHTML=table(['Pelanggan & Alamat','Cabang','Tarif','Nominal Bayar','Status','Diinput / Dicatat Oleh',''],P.map(p=>{const t=T[p.id];return[
     `<div><b>${esc(p.nama)}</b><div class="text-slate-500 text-[11px]"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i>${esc(p.alamat)}</div><div class="font-mono text-[10px] text-slate-400">${p.id}</div></div>`,esc(cabNama(p.cabangId)),rp(p.tarif),
-    t?`<b>${rp(t.nominalBayar)}</b>`:`<input id="n-${p.id}" type="number" inputmode="numeric" min="1" value="${p.tarif}" class="w-28 py-1.5 px-2 border border-slate-200 rounded-lg text-right">`,
+    t?`<b>${rp(t.nominalBayar)}</b>`:`<span class="text-slate-400">-</span>`,
     t?pill('<i class="fa-solid fa-check"></i> Lunas','g'):pill('Belum Bayar','o'),
     `<div>${esc(p.diinputOleh?.nama)}<div class="text-[10px] text-slate-400">${t?'Dicatat: '+esc(t.dibayarOleh?.nama):'-'}</div>${t&&t.catatan?`<div class="text-[10px] italic text-slate-500">Ket: ${esc(t.catatan)}</div>`:''}</div>`,
-    t?`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="kw('${t.id}')" class="act-btn ab-b"><i class="fa-solid fa-receipt"></i>Kwitansi</button><button onclick="batal('${t.id}')" class="act-btn ab-r">Batalkan</button></div>`:`<button onclick="bayar('${p.id}')" class="${BT}"><i class="fa-solid fa-check mr-1.5"></i>Bayar</button>`]}));
+    t?`<div class="whitespace-nowrap flex gap-1.5 flex-wrap justify-end"><button onclick="fEdtByr('${p.id}')" class="act-btn ab-o"><i class="fa-solid fa-pen-to-square"></i>Edit</button><button onclick="kw('${t.id}')" class="act-btn ab-b"><i class="fa-solid fa-receipt"></i>Kwitansi</button></div>`:`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="fEdtByr('${p.id}')" class="act-btn ab-o"><i class="fa-solid fa-pen-to-square"></i>Edit</button></div>`]}));
 }
 const mkTg=(p,bln,n,ket)=>({id:p.id+'_'+bln,pelangganId:p.id,nama:p.nama,alamat:p.alamat||'-',cabangId:p.cabangId,bulan:bln,nominalBayar:n,status:'Lunas',tglBayar:new Date().toISOString(),diinputOleh:p.diinputOleh,dibayarOleh:who(),catatan:ket||''});
 function fBayar(){
   const P=visP().filter(p=>p.aktif!==false),rd=(v,l,c)=>`<label class="flex items-center gap-2 p-3 border border-slate-200 rounded-xl cursor-pointer text-xs font-bold has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50"><input type="radio" name="md" value="${v}" ${c?'checked':''} onchange="mdB()">${l}</label>`;
   modal('Tambah Pembayaran',`<form onsubmit="sBayar(event)" class="space-y-3">
   <div class="grid grid-cols-2 gap-2">${rd('lama','Pelanggan Lama',1)}${rd('baru','Pelanggan Baru',0)}</div>
-  ${fld('Bulan Tagihan',`<select id="b-bln" class="${IN}">${monthOpts(F.bln)}</select>`)}
-  <div id="b-lama">${fld('Pilih Pelanggan',`<select id="b-plg" onchange="pilPlg()" class="${IN}"><option value="">- Pilih pelanggan -</option>${P.map(p=>`<option value="${p.id}" data-t="${p.tarif}" data-a="${esc(p.alamat)}">${esc(p.nama)} (${p.id}) - ${esc(p.alamat)}</option>`).join('')}</select>`)}</div>
+  ${fld('Cabang Input Tagihan',`<select id="b-cab" onchange="cariPlg()" class="${IN}">${isA()?'<option value="">- Semua Cabang -</option>':''}${S.cabang.filter(c=>myCabs().includes(c.id)).map(c=>`<option value="${c.id}" ${(isA()?F.cab:me.cabangId)===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`)}
+  ${fld('Bulan Tagihan',`<select id="b-bln" onchange="cariPlg()" class="${IN}">${monthOpts(F.bln)}</select>`)}
+  <div id="b-lama" class="space-y-2">${fld('Cari Pelanggan (nama / alamat)',`<input id="b-cari" oninput="cariPlg()" placeholder="Ketik nama atau alamat..." class="${IN}">`)}${fld('Pilih Pelanggan',`<select id="b-plg" onchange="pilPlg()" class="${IN}"></select>`)}<div id="b-info" class="text-[11px] text-slate-500"></div></div>
   <div id="b-baru" class="hidden space-y-3">
     ${fld('Nama Pelanggan',`<input id="b-nama" placeholder="Nama Lengkap" class="${IN}">`)}
     ${fld('Alamat Lengkap',`<textarea id="b-alamat" placeholder="Jl. Contoh No. 12" rows="2" class="${IN}"></textarea>`)}
-    ${fld('Cabang',isA()?`<select id="b-cab" class="${IN}"><option value="">- Pilih Cabang -</option>${S.cabang.map(c=>`<option value="${c.id}">${esc(c.nama)}</option>`).join('')}</select>`:`<input readonly class="${IN} bg-slate-100" value="${esc(cabNama(me.cabangId))}">`)}
     <div class="grid grid-cols-2 gap-3">${fld('Paket',`<input id="b-paket" placeholder="Home 20 Mbps" class="${IN}">`)}${fld('Tarif Bulanan',`<input id="b-tarif" type="number" inputmode="numeric" min="0" oninput="$('b-nom').value=this.value" class="${IN}">`)}</div>
     ${fld('Keterangan Pelanggan',`<input id="b-pket" placeholder="Opsional" class="${IN}">`)}
   </div>
   ${fld('Nominal Bayar (Rp)',`<input id="b-nom" type="number" inputmode="numeric" min="1" required class="${IN}">`)}
   ${fld('Keterangan Pembayaran',`<textarea id="b-ket" rows="2" placeholder="Contoh: Dibayar tunai / transfer, titip tetangga" class="${IN}"></textarea>`)}
   <button class="${BT} w-full py-3">Simpan Pembayaran</button></form>`);
+  cariPlg();
+}
+/* Isi dropdown pelanggan (nama + alamat), bisa dicari */
+function cariPlg(){
+  const q=($('b-cari').value||'').toLowerCase().trim(),cab=$('b-cab').value,cur=$('b-plg').value;
+  const P=visP().filter(p=>p.aktif!==false&&(!cab||p.cabangId===cab)&&(p.nama+' '+p.alamat+' '+p.id).toLowerCase().includes(q));
+  $('b-plg').innerHTML='<option value="">- Pilih pelanggan ('+P.length+') -</option>'+P.map(p=>`<option value="${p.id}" data-t="${p.tarif}" ${p.id===cur?'selected':''}>${esc(p.nama)} - ${esc(p.alamat)}</option>`).join('');
+  pilPlg();
 }
 function mdB(){const b=document.querySelector('input[name=md]:checked').value==='baru';$('b-lama').classList.toggle('hidden',b);$('b-baru').classList.toggle('hidden',!b)}
-function pilPlg(){const o=$('b-plg').selectedOptions[0];$('b-nom').value=o&&o.dataset.t?o.dataset.t:''}
+function pilPlg(){
+  const o=$('b-plg').selectedOptions[0],p=o&&o.value?S.pelanggan.find(x=>x.id===o.value):null;
+  $('b-nom').value=o&&o.dataset.t?o.dataset.t:'';
+  $('b-info').innerHTML=p?`<i class="fa-solid fa-location-dot text-red-400 mr-1"></i>${esc(p.alamat)} &bull; ${esc(cabNama(p.cabangId))} &bull; Tarif ${rp(p.tarif)}${p.diinputOleh?.role==='Admin'?' &bull; <b class="text-blue-600">Data Admin</b>':''}`:'';
+}
 async function sBayar(e){
   e.preventDefault();
   const baru=document.querySelector('input[name=md]:checked').value==='baru',bln=$('b-bln').value,n=Number($('b-nom').value);
   if(!(n>0))return toast('Nominal harus lebih dari 0','e');
   let p;
   if(baru){
-    const nama=$('b-nama').value.trim(),alamat=$('b-alamat').value.trim(),cab=isA()?$('b-cab').value:me.cabangId;
-    if(!nama||!alamat||!cab)return toast('Lengkapi nama, alamat, dan cabang','e');
+    const nama=$('b-nama').value.trim(),alamat=$('b-alamat').value.trim(),cab=$('b-cab').value;
+    if(!nama||!alamat||!cab)return toast('Lengkapi nama, alamat, dan pilih cabang','e');
     p={id:'PLG-'+uid6(),nama,alamat,paket:$('b-paket').value.trim()||'-',tarif:Number($('b-tarif').value)||n,cabangId:cab,aktif:true,keterangan:$('b-pket').value.trim(),diinputOleh:who(),createdAt:new Date().toISOString()};
   }else{
     p=S.pelanggan.find(x=>x.id===$('b-plg').value);
@@ -422,13 +452,38 @@ async function sBayar(e){
   }
   if(await safe(async()=>{if(baru)await DB.put('pelanggan',p);await DB.put('tagihan',mkTg(p,bln,n,$('b-ket').value.trim()))})){F.bln=bln;closeModal();toast(baru?'Pelanggan baru & pembayaran tersimpan':'Pembayaran tersimpan');render()}
 }
-async function bayar(pid){
-  const p=S.pelanggan.find(x=>x.id===pid),n=Number($('n-'+pid).value);
-  if(!(n>0))return toast('Nominal harus lebih dari 0','e');
-  const o=mkTg(p,F.bln,n);
-  if(await safe(()=>DB.put('tagihan',o))){toast('Pembayaran '+p.nama+' tercatat');tByr()}
+/* Edit pembayaran: ubah status (Lunas / Belum Bayar), nominal, dan keterangan untuk bulan terpilih */
+function fEdtByr(pid){
+  const p=S.pelanggan.find(x=>x.id===pid);if(!p)return;
+  const t=S.tagihan.find(x=>x.id===pid+'_'+F.bln);
+  modal('Edit Pembayaran',`<form onsubmit="sEdtByr(event,'${pid}')" class="space-y-3">
+  <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs"><b class="text-sm">${esc(p.nama)}</b><div class="text-slate-500"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i>${esc(p.alamat)}</div><div class="text-slate-500 mt-1">Periode: <b>${bl(F.bln)}</b> &bull; Tarif ${rp(p.tarif)}</div></div>
+  ${fld('Status Pembayaran',`<select id="e-st" onchange="stEdt()" class="${IN}"><option value="Lunas" ${t?'selected':''}>Lunas</option><option value="Belum" ${t?'':'selected'}>Belum Bayar</option></select>`)}
+  <div id="e-box" class="space-y-3 ${t?'':'hidden'}">
+    ${fld('Nominal Bayar (Rp)',`<input id="e-nom" type="number" inputmode="numeric" min="1" class="${IN}" value="${t?t.nominalBayar:p.tarif}">`)}
+    ${fld('Keterangan Pembayaran',`<textarea id="e-ket" rows="2" placeholder="Contoh: Dibayar tunai / transfer" class="${IN}">${esc(t?t.catatan:'')}</textarea>`)}
+  </div>
+  <div id="e-warn" class="${t?'hidden':''} p-2.5 rounded-xl bg-orange-50 text-orange-700 text-[11px] border border-orange-200">${t?'':'Pelanggan ini belum membayar bulan ini. Pilih "Lunas" untuk mencatat pembayaran.'}</div>
+  <button class="${BT} w-full py-3">Simpan Perubahan</button></form>`);
 }
-async function batal(id){if(confirm('Batalkan pembayaran ini?')&&await safe(()=>DB.del('tagihan',id))){toast('Pembayaran dibatalkan');tByr()}}
+function stEdt(){
+  const l=$('e-st').value==='Lunas';$('e-box').classList.toggle('hidden',!l);
+  const w=$('e-warn');w.classList.toggle('hidden',l);w.textContent='Status Belum Bayar akan membatalkan/menghapus catatan pembayaran bulan ini.';
+}
+async function sEdtByr(e,pid){
+  e.preventDefault();
+  const p=S.pelanggan.find(x=>x.id===pid),id=pid+'_'+F.bln,t=S.tagihan.find(x=>x.id===id),lunas=$('e-st').value==='Lunas';
+  if(!lunas){
+    if(!t){closeModal();return toast('Tidak ada perubahan')}
+    if(!confirm('Ubah status menjadi Belum Bayar? Catatan pembayaran bulan ini akan dihapus.'))return;
+    if(await safe(()=>DB.del('tagihan',id))){closeModal();toast('Status diubah: Belum Bayar');tByr()}
+    return;
+  }
+  const n=Number($('e-nom').value),ket=$('e-ket').value.trim();
+  if(!(n>0))return toast('Nominal harus lebih dari 0','e');
+  const o=t?{...t,nominalBayar:n,status:'Lunas',catatan:ket,diperbaruiOleh:who(),diperbaruiAt:new Date().toISOString()}:mkTg(p,F.bln,n,ket);
+  if(await safe(()=>DB.put('tagihan',o))){closeModal();toast(t?'Pembayaran diperbarui':'Pembayaran tercatat');tByr()}
+}
 function rcHTML(t){
   const r=(a,b)=>`<tr><td style="padding:4px 0;color:#64748b">${a}</td><td style="text-align:right;font-weight:600">${b}</td></tr>`;
   return `<div style="font-family:sans-serif;max-width:420px;margin:auto;border:2px solid #1e293b;padding:16px;border-radius:12px;background:#fff"><h2 style="text-align:center;margin:0;color:#1e293b">${esc(brand())}</h2><p style="text-align:center;font-size:12px;margin:2px 0 8px;font-weight:700">KWITANSI PEMBAYARAN INTERNET</p><hr style="border:none;border-top:1px dashed #cbd5e1;margin:8px 0"><table style="width:100%;font-size:13px">${r('ID Pelanggan',t.pelangganId)}${r('Nama Pelanggan',esc(t.nama))}${r('Alamat',esc(t.alamat||'-'))}${r('Cabang',esc(cabNama(t.cabangId)))}${r('Periode',bl(t.bulan))}${r('Tgl Bayar',new Date(t.tglBayar).toLocaleDateString('id-ID'))}${r('Diinput Oleh',esc(t.diinputOleh?.nama))}${r('Dicatat Oleh',esc(t.dibayarOleh?.nama))}${t.catatan?r('Keterangan',esc(t.catatan)):''}</table><hr style="border:none;border-top:1px dashed #cbd5e1;margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:#0f172a"><span>TOTAL BAYAR</span><span>${rp(t.nominalBayar)}</span></div><p style="text-align:center;font-size:12px;margin-top:12px;color:#059669;font-weight:800">LUNAS - Terima kasih</p></div>`;
@@ -457,7 +512,7 @@ function cetakLap(){
 
 /* ===== Manajemen Cabang (Admin) ===== */
 function vCab(){return `<div class="flex mb-4"><button onclick="fCab()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Cabang</button></div><div id="tbl" class="card overflow-hidden"></div>`}
-function tCab(){$('tbl').innerHTML=table(['ID','Kode','Nama Cabang','Alamat','Pelanggan','Petugas',''],S.cabang.map(c=>[`<span class="font-mono font-bold">${c.id}</span>`,esc(c.kode),`<b>${esc(c.nama)}</b>`,esc(c.alamat),S.pelanggan.filter(p=>p.cabangId===c.id).length,S.users.filter(u=>u.cabangId===c.id).length,`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="fCab('${c.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="delCab('${c.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button></div>`]))}
+function tCab(){$('tbl').innerHTML=table(['ID','Kode','Nama Cabang','Alamat','Pelanggan','Petugas',''],S.cabang.map(c=>[`<span class="font-mono font-bold">${c.id}</span>`,esc(c.kode),`<b>${esc(c.nama)}</b>`,esc(c.alamat),S.pelanggan.filter(p=>p.cabangId===c.id).length,S.users.filter(u=>ucabs(u).includes(c.id)).length,`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="fCab('${c.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="delCab('${c.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button></div>`]))}
 function fCab(id){const c=S.cabang.find(x=>x.id===id)||{};modal(id?'Edit Cabang':'Tambah Cabang',`<form onsubmit="sCab(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama Cabang',`<input id="f-nama" required class="${IN}" value="${esc(c.nama)}">`)}${fld('Kode',`<input id="f-kode" required maxlength="6" class="${IN}" value="${esc(c.kode)}">`)}${fld('Alamat Cabang',`<input id="f-alamat" class="${IN}" value="${esc(c.alamat)}">`)}<button class="${BT} w-full py-3">Simpan Cabang</button></form>`)}
 async function sCab(e){
   e.preventDefault();const old=$('f-old').value,n=Math.max(0,...S.cabang.map(c=>+c.id.split('-')[1]||0))+1;
@@ -465,23 +520,25 @@ async function sCab(e){
   if(await safe(()=>DB.put('cabang',o))){closeModal();toast('Cabang tersimpan');tCab()}
 }
 async function delCab(id){
-  if(S.pelanggan.some(p=>p.cabangId===id)||S.users.some(u=>u.cabangId===id))return toast('Cabang masih dipakai pelanggan/petugas','e');
+  if(S.pelanggan.some(p=>p.cabangId===id)||S.users.some(u=>ucabs(u).includes(id)))return toast('Cabang masih dipakai pelanggan/petugas','e');
   if(confirm('Hapus cabang ini?')&&await safe(()=>DB.del('cabang',id))){toast('Cabang dihapus');tCab()}
 }
 
 /* ===== Manajemen User Petugas (Admin) ===== */
 function vUsr(){return `<div class="flex mb-4"><button onclick="fUsr()" class="${BT} ml-auto"><i class="fa-solid fa-plus mr-1.5"></i>Petugas</button></div><div id="tbl" class="card overflow-hidden"></div>`}
-function tUsr(){$('tbl').innerHTML=table(['ID','Nama','Username','Cabang','Status',''],S.users.map(u=>[`<span class="font-mono font-bold">${u.id}</span>`,`<b>${esc(u.nama)}</b>`,esc(u.username),esc(cabNama(u.cabangId)),u.aktif!==false?pill('Aktif','g'):pill('Nonaktif','s'),`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="fUsr('${u.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="delUsr('${u.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button></div>`]))}
+function tUsr(){$('tbl').innerHTML=table(['ID','Nama','Username','Cabang','Status',''],S.users.map(u=>[`<span class="font-mono font-bold">${u.id}</span>`,`<b>${esc(u.nama)}</b>`,esc(u.username),esc(ucabs(u).map(cabNama).join(', ')||'-'),u.aktif!==false?pill('Aktif','g'):pill('Nonaktif','s'),`<div class="whitespace-nowrap flex gap-1.5 justify-end"><button onclick="fUsr('${u.id}')" class="act-btn ab-b"><i class="fa-solid fa-pen"></i>Edit</button><button onclick="delUsr('${u.id}')" class="act-btn ab-r"><i class="fa-solid fa-trash"></i></button></div>`]))}
 function fUsr(id){
   const u=S.users.find(x=>x.id===id)||{};
-  modal(id?'Edit Petugas':'Tambah Petugas',`<form onsubmit="sUsr(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama Petugas',`<input id="f-nama" required class="${IN}" value="${esc(u.nama)}">`)}${fld('Username',`<input id="f-user" required autocapitalize="none" class="${IN}" value="${esc(u.username)}">`)}${fld('Password'+(id?' (kosongkan jika tidak diubah)':''),`<input id="f-pass" type="password" ${id?'':'required'} minlength="6" class="${IN}">`)}${fld('Cabang',`<select id="f-cab" required class="${IN}"><option value="">- Pilih Cabang -</option>${S.cabang.map(c=>`<option value="${c.id}" ${u.cabangId===c.id?'selected':''}>${esc(c.nama)}</option>`).join('')}</select>`)}${fld('Status',`<select id="f-aktif" class="${IN}"><option value="1">Aktif</option><option value="0" ${u.aktif===false?'selected':''}>Nonaktif</option></select>`)}<button class="${BT} w-full py-3">Simpan Petugas</button></form>`);
+  modal(id?'Edit Petugas':'Tambah Petugas',`<form onsubmit="sUsr(event)" class="space-y-3"><input type="hidden" id="f-old" value="${id||''}">${fld('Nama Petugas',`<input id="f-nama" required class="${IN}" value="${esc(u.nama)}">`)}${fld('Username',`<input id="f-user" required autocapitalize="none" class="${IN}" value="${esc(u.username)}">`)}${fld('Password'+(id?' (kosongkan jika tidak diubah)':''),`<input id="f-pass" type="password" ${id?'':'required'} minlength="6" class="${IN}">`)}${fld('Cabang (boleh pilih lebih dari satu)',`<div class="grid gap-1.5 max-h-44 overflow-y-auto p-2 border border-slate-200 rounded-xl bg-white">${S.cabang.map(c=>`<label class="flex items-center gap-2 text-xs font-semibold py-1 cursor-pointer"><input type="checkbox" name="f-cabs" value="${c.id}" ${ucabs(u).includes(c.id)?'checked':''} class="w-4 h-4">${esc(c.nama)}</label>`).join('')||'<span class="text-xs text-slate-400">Belum ada cabang</span>'}</div>`)}${fld('Status',`<select id="f-aktif" class="${IN}"><option value="1">Aktif</option><option value="0" ${u.aktif===false?'selected':''}>Nonaktif</option></select>`)}<button class="${BT} w-full py-3">Simpan Petugas</button></form>`);
 }
 async function sUsr(e){
   e.preventDefault();const old=S.users.find(x=>x.id===$('f-old').value),un=$('f-user').value.trim();
   if(un.includes('@'))return toast('Username tidak boleh mengandung @','e');
   if(S.users.some(x=>x.username===un&&(!old||x.id!==old.id)))return toast('Username sudah dipakai','e');
+  const cabs=[...document.querySelectorAll('input[name=f-cabs]:checked')].map(x=>x.value);
+  if(!cabs.length)return toast('Pilih minimal satu cabang','e');
   const p=$('f-pass').value,n=Math.max(0,...S.users.map(x=>+x.id.split('-')[1]||0))+1;
-  const o={id:old?old.id:'USR-'+String(n).padStart(3,'0'),nama:$('f-nama').value.trim(),username:un,passwordHash:p?await sha(p):old.passwordHash,role:'Petugas',cabangId:$('f-cab').value,aktif:$('f-aktif').value==='1'};
+  const o={id:old?old.id:'USR-'+String(n).padStart(3,'0'),nama:$('f-nama').value.trim(),username:un,passwordHash:p?await sha(p):old.passwordHash,role:'Petugas',cabangId:cabs[0],cabangIds:cabs,aktif:$('f-aktif').value==='1'};
   if(await safe(()=>DB.put('users',o))){closeModal();toast('Petugas tersimpan');tUsr()}
 }
 async function delUsr(id){if(confirm('Hapus petugas ini? Data yang pernah ia input tetap tersimpan.')&&await safe(()=>DB.del('users',id))){toast('Petugas dihapus');tUsr()}}
